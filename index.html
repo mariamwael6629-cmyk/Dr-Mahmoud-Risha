@@ -313,8 +313,11 @@ body.rtl .info-item .info-key{text-transform:none;letter-spacing:0;}
   <div id="page-home"         style="display:none"></div>
   <div id="page-patients"     style="display:none"></div>
   <div id="page-addPatient"   style="display:none"></div>
+  <div id="page-medications"  style="display:none"></div>
   <div id="page-prescription" style="display:none"></div>
   <div id="page-booking"      style="display:none"></div>
+  <div id="page-queue"        style="display:none"></div>
+  <div id="page-financial"    style="display:none"></div>
   <div id="page-settings"     style="display:none"></div>
 
   <div id="toast-container"></div>
@@ -483,6 +486,7 @@ en:{
   repCollected:'Money Collected', repBilled:'Total Billed', repOutstanding:'Outstanding',
   dataTransfer:'Data Backup & Transfer', exportData:'Export Data', importData:'Import Data',
   importDataHint:'Import a JSON backup exported from this or another clinic system.', importDone:'Data imported.',
+  createInvoice:'Create Invoice',
 },
 ar:{
   brand:'د. محمود ريشة',
@@ -628,6 +632,7 @@ ar:{
   repCollected:'المبالغ المحصّلة', repBilled:'إجمالي الفواتير', repOutstanding:'المتبقي',
   dataTransfer:'نسخ ونقل البيانات', exportData:'تصدير البيانات', importData:'استيراد البيانات',
   importDataHint:'استيراد نسخة احتياطية JSON مُصدّرة من هذا النظام أو نظام آخر.', importDone:'تم استيراد البيانات.',
+  createInvoice:'إنشاء فاتورة',
 }};
 
 let currentLang = 'en';
@@ -684,8 +689,10 @@ function applyTheme(themeId, opts){
 
 const state = {
   currentPage:'signIn',
-  patients:[], appointments:[],
-  searchQuery:'',
+  patients:[], appointments:[], medications:[],
+  searchQuery:'', medSort:'recent',
+  queueList:[], queueLoaded:false,
+  invoiceList:[], invoiceSummary:null, invoicesLoaded:false, financialSearch:'',
   rxPatient: null, rxDiagnosis:'', rxNotes:'', rxDrugs:[], rxDate:null,
   rxPatientQuery:'', rxPatientDropdownOpen:false,
   
@@ -840,11 +847,13 @@ function applyAutocompletePick(inputEl,kind,item){
 }
 
 async function loadInitialData(){
-  try{
-    const res=await apiGet('/patients?perPage=500');
-    state.patients=res.items;
-  }catch(err){
-    state.patients=[];
+  const [patientsRes,medsRes]=await Promise.allSettled([
+    apiGet('/patients?perPage=500'),
+    apiGet('/medications'),
+  ]);
+  state.patients=patientsRes.status==='fulfilled'?patientsRes.value.items:[];
+  state.medications=medsRes.status==='fulfilled'?medsRes.value:[];
+  if(patientsRes.status==='rejected'||medsRes.status==='rejected'){
     toast('Some clinic data failed to load from the server.','error');
   }
 }
@@ -876,7 +885,7 @@ function resolveConfirm(v){
   if(_cr){_cr(v);_cr=null;}
 }
 
-const ALL_PAGES=['signIn','home','patients','addPatient','prescription','booking','settings'];
+const ALL_PAGES=['signIn','home','patients','addPatient','medications','prescription','booking','queue','financial','settings'];
 
 function navigate(page){
   ALL_PAGES.forEach(p=>{
@@ -899,12 +908,16 @@ function buildNavLinks(activePage){
   const pages=[
     {id:'home',        label:()=>t('home'),         icon:icoHome()},
     {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
-    {id:'patients',    label:()=>t('patients'),     icon:icoQueue()},
+    {id:'queue',       label:()=>t('queue'),        icon:icoQueue()},
+    {id:'patients',    label:()=>t('patients'),     icon:icoDoctor()},
+    {id:'addPatient',  label:()=>t('addPatient'),   icon:icoAddPt()},
     {id:'prescription',label:()=>t('prescription'), icon:icoRx()},
+    {id:'medications', label:()=>t('medications'),  icon:icoMed()},
+    {id:'financial',   label:()=>t('financial'),    icon:icoFinancial()},
     {id:'settings',    label:()=>t('settings'),     icon:icoSettings()},
   ];
   document.getElementById('nav-links-el').innerHTML = pages.map(p=>`
-    <button class="nav-btn ${activePage===p.id?'active':''}" onclick="navigate('${p.id}')">
+    <button class="nav-btn ${activePage===p.id?'active':''}" onclick="${p.id==='addPatient'?'cancelEditPatient_silent();':''}navigate('${p.id}')">
       ${p.icon} ${p.label()}
     </button>`).join('');
 
@@ -916,8 +929,11 @@ function renderPage(page){
   else if(page==='home')        renderHome();
   else if(page==='patients')    renderPatients();
   else if(page==='addPatient')  renderAddPatient();
+  else if(page==='medications') renderMedications();
   else if(page==='prescription')renderPrescription();
   else if(page==='booking')     renderBooking();
+  else if(page==='queue')       renderQueue();
+  else if(page==='financial')   renderFinancial();
   else if(page==='settings')    renderSettings();
 }
 
@@ -925,6 +941,7 @@ function onSearch(val){
   state.searchQuery=val;
   if(state.currentPage==='patients') renderPatients();
   if(state.currentPage==='home') renderHome();
+  if(state.currentPage==='medications') renderMedications();
   renderGlobalSearchDropdown(val);
 }
 function renderGlobalSearchDropdown(val){
@@ -964,6 +981,23 @@ function filteredPatients(){
   const q=state.searchQuery.toLowerCase().trim();
   if(!q) return state.patients;
   return state.patients.filter(p=>p.Name.toLowerCase().includes(q)||String(p.patientNumber).includes(q)||String(p.mobileNumber||'').includes(q));
+}
+function filteredMedications(){
+  const q=state.searchQuery.toLowerCase().trim();
+  let list=!q?state.medications:state.medications.filter(m=>
+    [m.name,m.company,m.genericName,m.category,m.dosage].some(v=>(v||'').toLowerCase().includes(q)));
+  list=list.slice();
+  if(state.medSort==='nameAsc') list.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(state.medSort==='nameDesc') list.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(state.medSort==='category') list.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a.name.localeCompare(b.name));
+  else list.sort((a,b)=>b.id-a.id);
+  return list;
+}
+function filteredInvoices(){
+  const q=(state.financialSearch||'').toLowerCase().trim();
+  if(!q) return state.invoiceList;
+  return state.invoiceList.filter(inv=>
+    (inv.patientName||'').toLowerCase().includes(q)||(inv.description||'').toLowerCase().includes(q));
 }
 
 const icoHome  = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3 12 2-2m0 0 7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11 2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6"/></svg>`;
@@ -1803,7 +1837,6 @@ function buildRxPreview(pt,override){
       </div>
     </div>`).join('');
 
-  
   const overlayClass=state.rxPrintMode==='overlay'?' rx-overlay-mode':'';
   return `<div id="rx-preview" class="${overlayClass.trim()}">
     <div class="header">
@@ -2308,6 +2341,296 @@ function renderPatients(){
   </div>`;
 }
 
+function renderMedications(){
+  const meds=filteredMedications();
+  const rowsHTML=meds.length===0
+    ?`<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:2rem">${t('noMeds')}</td></tr>`
+    :meds.map(m=>{
+        const realIdx=state.medications.indexOf(m);
+        return `<tr>
+          <td>${esc(m.name)}</td>
+          <td>${esc(m.genericName||'—')}</td>
+          <td>${esc(m.category||'—')}</td>
+          <td>${esc(m.dosage||'—')}</td>
+          <td>${esc(m.company)}</td>
+          <td>${esc(m.date)}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="removeMedication(${realIdx})">${t('del')}</button></td>
+        </tr>`;}).join('');
+
+  document.getElementById('page-medications').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('medTitle')}</div>
+    <p class="page-sub">${t('medSub')}</p>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('addNewMed')}</div>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('medName')} *</label>
+          <input class="form-input" type="text" id="med-name" placeholder="${t('medName')}"/></div>
+        <div class="field-group"><label class="form-label">${t('company')} *</label>
+          <input class="form-input" type="text" id="med-company" placeholder="${t('company')}"/></div>
+        <div class="field-group"><label class="form-label">${t('genericName')}</label>
+          <input class="form-input" type="text" id="med-generic" placeholder="${t('genericName')}"/></div>
+        <div class="field-group"><label class="form-label">${t('category')}</label>
+          <input class="form-input" type="text" id="med-category" placeholder="${t('category')}"/></div>
+        <div class="field-group"><label class="form-label">${t('dosage')}</label>
+          <input class="form-input" type="text" id="med-dosage" placeholder="${t('dosage')}"/></div>
+      </div>
+      <div class="field-group"><label class="form-label">${t('purpose')} *</label>
+        <textarea class="form-input" id="med-purpose" rows="3" placeholder="${t('purpose')}"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:0.5rem">
+        <button class="btn btn-primary" onclick="addMedication()">${t('addMedBtn')}</button>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:2rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem">
+        <div style="font-weight:700;font-size:1rem;color:var(--accent-deep)">${t('medRecords')}</div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <label class="form-label" style="margin:0">${t('sortBy')}</label>
+          <select class="form-input" style="width:auto" onchange="state.medSort=this.value; renderMedications(); document.getElementById('page-medications').style.display=''">
+            <option value="recent" ${state.medSort==='recent'?'selected':''}>${t('sortRecent')}</option>
+            <option value="nameAsc" ${state.medSort==='nameAsc'?'selected':''}>${t('sortNameAsc')}</option>
+            <option value="nameDesc" ${state.medSort==='nameDesc'?'selected':''}>${t('sortNameDesc')}</option>
+            <option value="category" ${state.medSort==='category'?'selected':''}>${t('sortCategory')}</option>
+          </select>
+        </div>
+      </div>
+      <div class="med-table-wrap"><table>
+        <thead><tr>
+          <th>${t('medName')}</th><th>${t('genericName')}</th><th>${t('category')}</th><th>${t('dosage')}</th>
+          <th>${t('medCompany')}</th><th>${t('dateAdded')}</th><th>${t('actions')}</th>
+        </tr></thead>
+        <tbody>${rowsHTML}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+async function addMedication(){
+  const name=document.getElementById('med-name').value.trim();
+  const company=document.getElementById('med-company').value.trim();
+  const purpose=document.getElementById('med-purpose').value.trim();
+  const genericName=document.getElementById('med-generic').value.trim();
+  const category=document.getElementById('med-category').value.trim();
+  const dosage=document.getElementById('med-dosage').value.trim();
+  if(!name||!company||!purpose){ toast(t('fillFields'),'error'); return; }
+  try{
+    const record=await apiPost('/medications',{name,company,purpose,genericName,category,dosage});
+    state.medications.unshift(record);
+    toast(t('medAdded'),'success');
+    renderMedications();
+    document.getElementById('page-medications').style.display='';
+  }catch(err){ toast(err.message||'Failed to add medication.','error'); }
+}
+async function removeMedication(i){
+  const confirmed=await showConfirm(t('confirmDel'),t('confirmDelMsg'));
+  if(!confirmed) return;
+  const record=state.medications[i];
+  try{
+    await apiDelete(`/medications/${record.id}`);
+    state.medications.splice(i,1);
+    toast(t('medDeleted'),'info');
+    renderMedications();
+    document.getElementById('page-medications').style.display='';
+  }catch(err){ toast(err.message||'Failed to delete medication.','error'); }
+}
+
+async function fetchQueueList(){
+  try{
+    state.queueList=await apiGet(`/appointments?date=${todayISO()}`);
+  }catch(err){ toast(err.message||'Failed to load queue.','error'); state.queueList=[]; }
+  state.queueLoaded=true;
+  renderQueue();
+  document.getElementById('page-queue').style.display='';
+}
+
+function renderQueue(){
+  if(!state.queueLoaded){
+    document.getElementById('page-queue').innerHTML=`<div class="page"><div class="page-heading">${t('queueTitle')}</div></div>`;
+    fetchQueueList();
+    return;
+  }
+  const cols=[
+    {status:'waiting',label:t('statusWaiting'),color:'#d97706',bg:'rgba(217,119,6,.08)'},
+    {status:'arrived',label:t('statusArrived'),color:'#7c3aed',bg:'rgba(124,58,237,.08)'},
+    {status:'in_consultation',label:t('statusInConsultation'),color:'#2563eb',bg:'rgba(37,99,235,.08)'},
+    {status:'completed',label:t('statusCompleted'),color:'#16a34a',bg:'rgba(22,163,74,.08)'},
+    {status:'cancelled',label:t('statusCancelled'),color:'#dc2626',bg:'rgba(220,38,38,.08)'},
+  ];
+  const colsHTML=cols.map(c=>{
+    const items=state.queueList.filter(a=>(a.status||'waiting')===c.status);
+    const cardsHTML=items.length===0
+      ?`<p style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:1rem 0">—</p>`
+      :items.map(a=>`
+        <div style="background:rgba(255,255,255,.7);border-radius:12px;padding:0.7rem 0.85rem;margin-bottom:0.6rem;border:1px solid rgba(255,255,255,.8)">
+          <div style="font-weight:600;font-size:0.85rem;color:#1e293b">${esc(a.patientName||'—')}</div>
+          <div style="font-size:0.74rem;color:#64748b">${esc(a.time||'')} · ${visitTypeLabel(a.visitType)}</div>
+          <div style="display:flex;gap:0.35rem;margin-top:0.5rem;flex-wrap:wrap">
+            ${c.status==='waiting'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'arrived')">${t('checkIn')}</button>`:''}
+            ${c.status==='waiting'||c.status==='arrived'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'in_consultation')">${t('startConsult')}</button>`:''}
+            ${c.status==='in_consultation'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'completed')">${t('complete')}</button>`:''}
+            ${c.status==='waiting'||c.status==='arrived'||c.status==='in_consultation'?`<button class="btn btn-danger btn-sm" onclick="setQueueStatus(${a.id},'cancelled')">${t('cancelAppt')}</button>`:''}
+          </div>
+        </div>`).join('');
+    return `<div style="flex:1;min-width:200px">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.color}"></span>
+        <span style="font-weight:700;font-size:0.82rem;color:${c.color}">${c.label}</span>
+        <span style="font-size:0.76rem;color:#94a3b8">(${items.length})</span>
+      </div>
+      <div style="background:${c.bg};border-radius:16px;padding:0.8rem;min-height:120px">${cardsHTML}</div>
+    </div>`;
+  }).join('');
+
+  const rowsHTML=state.queueList.length===0
+    ?`<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:2rem">${t('noQueueToday')}</td></tr>`
+    :state.queueList.map(a=>`
+      <tr>
+        <td>${esc(a.patientName||'—')}</td>
+        <td>${esc(a.time||'—')}</td>
+        <td><span style="font-weight:700;font-size:0.8rem;color:${statusColor(a.status)}">${statusLabel(a.status)}</span></td>
+        <td>
+          ${a.status==='waiting'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'arrived')">${t('checkIn')}</button>`:''}
+          ${a.status==='waiting'||a.status==='arrived'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'in_consultation')">${t('startConsult')}</button>`:''}
+          ${a.status==='in_consultation'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'completed')">${t('complete')}</button>`:''}
+        </td>
+      </tr>`).join('');
+
+  document.getElementById('page-queue').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('queueTitle')}</div>
+    <p class="page-sub">${t('queueSub')}</p>
+    ${state.queueList.length===0?`<div class="empty-state"><p>${t('noQueueToday')}</p></div>`:
+    `<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">${colsHTML}</div>`}
+    <div class="glass-card" style="padding:2rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('todaysBookings')}</div>
+      <div class="med-table-wrap"><table>
+        <thead><tr><th>${t('invoicePatient')}</th><th>${t('apptTime')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr></thead>
+        <tbody>${rowsHTML}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+async function setQueueStatus(id,status){
+  try{
+    await apiPut(`/appointments/${id}`,{status});
+    await fetchQueueList();
+    if(state.homeQueueLoaded){ try{ state.homeQueue=await apiGet(`/appointments?date=${todayISO()}`); }catch(e){} }
+  }catch(err){ toast(err.message||'Failed to update status.','error'); }
+}
+
+async function fetchFinancialData(){
+  const [invoicesRes,summaryRes]=await Promise.allSettled([apiGet('/financial/invoices'),apiGet('/financial/summary')]);
+  state.invoiceList=invoicesRes.status==='fulfilled'?invoicesRes.value:[];
+  state.invoiceSummary=summaryRes.status==='fulfilled'?summaryRes.value:null;
+  if(invoicesRes.status==='rejected'||summaryRes.status==='rejected'){
+    toast('Some financial data failed to load.','error');
+  }
+  state.invoicesLoaded=true;
+  renderFinancial();
+  document.getElementById('page-financial').style.display='';
+}
+
+function invoiceRowsHTML(list){
+  const statusLabelMap={unpaid:t('unpaid'),partial:t('partial'),paid:t('paid')};
+  const statusColorMap={unpaid:'#dc2626',partial:'#d97706',paid:'#16a34a'};
+  return list.length===0
+    ?`<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:2rem">${t('noInvoices')}</td></tr>`
+    :list.map(inv=>`
+      <tr>
+        <td>${esc(inv.patientName||'—')}</td>
+        <td>${esc(inv.description||'—')}</td>
+        <td>${esc(inv.amount.toFixed(2))}</td>
+        <td>${esc(inv.paidAmount.toFixed(2))}</td>
+        <td>${esc(inv.balance.toFixed(2))}</td>
+        <td><span style="font-weight:700;font-size:0.78rem;color:${statusColorMap[inv.status]}">${statusLabelMap[inv.status]}</span></td>
+        <td>${inv.status!=='paid'?`
+          <input class="form-input" style="width:90px;display:inline-block;padding:0.3rem 0.5rem;font-size:0.78rem" type="number" min="0" step="0.01" id="pay-amt-${inv.id}" placeholder="0.00"/>
+          <button class="btn btn-ghost btn-sm" onclick="recordInvoicePayment(${inv.id})">${t('recordPayment')}</button>`:''}
+        </td>
+      </tr>`).join('');
+}
+function setFinancialSearch(val){
+  state.financialSearch=val;
+  const tbody=document.getElementById('fin-rows-tbody');
+  if(tbody) tbody.innerHTML=invoiceRowsHTML(filteredInvoices());
+}
+
+function renderFinancial(){
+  if(!state.invoicesLoaded){
+    document.getElementById('page-financial').innerHTML=`<div class="page"><div class="page-heading">${t('financialTitle')}</div></div>`;
+    fetchFinancialData();
+    return;
+  }
+  const s=state.invoiceSummary||{totalBilled:0,totalCollected:0,totalOutstanding:0};
+  const ptOptions=state.patients.map(p=>`<option value="${p.id}">${esc(p.Name)} — #${esc(p.patientNumber)}</option>`).join('');
+
+  document.getElementById('page-financial').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('financialTitle')}</div>
+    <p class="page-sub">${t('financialSub')}</p>
+    <div class="stats-row">
+      <div class="stat-card glass-card"><div class="stat-num">${s.totalBilled.toFixed(2)}</div><div class="stat-label">${t('totalBilled')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${s.totalCollected.toFixed(2)}</div><div class="stat-label">${t('totalCollected')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${s.totalOutstanding.toFixed(2)}</div><div class="stat-label">${t('totalOutstanding')}</div></div>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('createInvoice')}</div>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('invoicePatient')} *</label>
+          <select class="form-input" id="inv-patient"><option value="">— ${t('selectPt')} —</option>${ptOptions}</select></div>
+        <div class="field-group"><label class="form-label">${t('invoiceDesc')}</label>
+          <input class="form-input" type="text" id="inv-desc"/></div>
+        <div class="field-group"><label class="form-label">${t('invoiceAmount')} *</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="inv-amount" placeholder="0.00"/></div>
+        <div class="field-group"><label class="form-label">${t('amountPaidNow')}</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="inv-paid" placeholder="0.00"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:0.5rem">
+        <button class="btn btn-primary" onclick="createInvoice()">${t('createInvoice')}</button>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:2rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem">
+        <div style="font-weight:700;font-size:1rem;color:var(--accent-deep)">${t('invoices')}</div>
+        <input class="form-input" style="padding:0.35rem 0.6rem;font-size:0.82rem;width:auto" type="text" id="fin-search"
+          placeholder="${t('financialSearchPh')}" value="${esc(state.financialSearch||'')}" oninput="setFinancialSearch(this.value)"/>
+      </div>
+      <div class="med-table-wrap"><table>
+        <thead><tr>
+          <th>${t('invoicePatient')}</th><th>${t('invoiceDesc')}</th><th>${t('invoiceAmount')}</th>
+          <th>${t('paid')}</th><th>${t('balance')}</th><th>${t('status')}</th><th>${t('actions')}</th>
+        </tr></thead>
+        <tbody id="fin-rows-tbody">${invoiceRowsHTML(filteredInvoices())}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+async function createInvoice(){
+  const patientId=document.getElementById('inv-patient').value;
+  const description=document.getElementById('inv-desc').value.trim();
+  const amount=document.getElementById('inv-amount').value;
+  const paidAmount=document.getElementById('inv-paid').value;
+  if(!patientId){ toast(t('selectPtFirst'),'error'); return; }
+  if(!amount||Number(amount)<=0){ toast(t('fillFields'),'error'); return; }
+  try{
+    await apiPost('/financial/invoices',{patientId,description,amount,paidAmount:paidAmount||0});
+    toast(t('invoiceCreated'),'success');
+    await fetchFinancialData();
+  }catch(err){ toast(err.message||t('fillFields'),'error'); }
+}
+
+async function recordInvoicePayment(id){
+  const amount=document.getElementById(`pay-amt-${id}`).value;
+  if(!amount||Number(amount)<=0){ toast(t('fillFields'),'error'); return; }
+  try{
+    await apiPost(`/financial/invoices/${id}/payments`,{amount});
+    toast(t('paymentRecorded'),'success');
+    await fetchFinancialData();
+  }catch(err){ toast(err.message||'Failed to record payment.','error'); }
+}
+
 function buildReportsSectionHTML(){
   const d=state.reportsData;
   if(!d) return '';
@@ -2520,6 +2843,7 @@ async function liveSyncTick(){
   if(state.currentPage==='home'){ await fetchHomeQueue(); }
   else if(state.currentPage==='patients'){ renderPatients(); }
   else if(state.currentPage==='booking'&&state.bookingLoaded){ await loadBookingDay(); }
+  else if(state.currentPage==='queue'&&state.queueLoaded){ await fetchQueueList(); }
 }
 
 async function bootApp(){

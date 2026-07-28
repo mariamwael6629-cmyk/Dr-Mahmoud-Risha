@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+backend/database/clinic.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/venv/

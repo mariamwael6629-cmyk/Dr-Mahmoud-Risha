@@ -1,0 +1,2539 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Dr Mahmoud Risha Rheumatology Clinic — Patient Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+
+:root{
+  --accent-light-rgb:59,130,246; --accent-rgb:37,99,235; --accent-dark-rgb:29,78,216; --accent-deep:#1e3a8a;
+  --accent:rgb(var(--accent-rgb)); --accent-dark:rgb(var(--accent-dark-rgb));
+  --bg-1:#dbeafe; --bg-2:#e0e7ff; --bg-3:#bfdbfe; --bg-4:#c7d2fe;
+  --shadow:0 8px 32px rgba(0,30,100,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;min-height:100vh;
+  background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 40%,var(--bg-3) 70%,var(--bg-4) 100%);
+  background-attachment:fixed;color:#0f172a;}
+body.rtl{font-family:'Cairo',sans-serif;direction:rtl;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 700px 500px at 20% 10%,rgba(var(--accent-light-rgb),.30) 0%,transparent 70%),
+             radial-gradient(ellipse 600px 400px at 80% 80%,rgba(var(--accent-dark-rgb),.26) 0%,transparent 70%);}
+#app{position:relative;z-index:1;min-height:100vh;}
+
+.navbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.6);
+  backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid rgba(255,255,255,.55);
+  box-shadow:0 4px 24px rgba(0,30,100,.08);padding:0 1.5rem;min-height:64px;
+  display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
+.brand{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;
+  color:var(--accent-deep);white-space:nowrap;flex-shrink:0;}
+body.rtl .brand{font-family:'Cairo',serif;}
+.brand span{color:var(--accent);}
+.nav-links{display:flex;align-items:center;gap:.2rem;flex:1;justify-content:center;flex-wrap:wrap;}
+.nav-btn{display:flex;align-items:center;gap:.35rem;padding:.4rem .85rem;border-radius:10px;
+  font-size:.82rem;font-weight:500;cursor:pointer;border:1px solid transparent;
+  color:#334155;background:transparent;transition:all .2s;white-space:nowrap;font-family:inherit;}
+.nav-btn:hover{background:rgba(var(--accent-rgb),.1);color:var(--accent-dark);border-color:rgba(var(--accent-rgb),.2);}
+.nav-btn.active{background:rgba(var(--accent-rgb),.15);color:var(--accent-dark);border-color:rgba(var(--accent-rgb),.3);font-weight:600;}
+.nav-btn svg{width:15px;height:15px;flex-shrink:0;}
+.nav-right{display:flex;align-items:center;gap:.5rem;margin-inline-start:auto;}
+.lang-btn{padding:.36rem .8rem;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer;
+  border:1.5px solid rgba(var(--accent-rgb),.3);color:var(--accent);background:rgba(var(--accent-rgb),.07);
+  transition:all .2s;white-space:nowrap;font-family:inherit;}
+.lang-btn:hover{background:rgba(var(--accent-rgb),.14);}
+.nav-search{display:flex;align-items:center;gap:.45rem;background:rgba(255,255,255,.7);
+  border:1px solid rgba(255,255,255,.8);border-radius:11px;padding:.38rem .85rem;
+  min-width:180px;backdrop-filter:blur(8px);}
+.nav-search input{border:none;background:transparent;outline:none;font-size:.83rem;
+  color:#1e293b;width:100%;font-family:inherit;}
+.nav-search input::placeholder{color:#94a3b8;}
+.nav-search svg{width:14px;height:14px;color:#94a3b8;flex-shrink:0;}
+
+.glass-card{background:rgba(255,255,255,.58);backdrop-filter:blur(20px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.68);border-radius:20px;
+  box-shadow:var(--shadow),0 1.5px 0 rgba(255,255,255,.75) inset;}
+
+.page{max-width:1100px;margin:0 auto;padding:2.2rem 1.4rem;animation:fadeUp .32s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.page-heading{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;
+  color:var(--accent-deep);margin-bottom:.3rem;}
+body.rtl .page-heading{font-family:'Cairo',sans-serif;}
+.page-sub{font-size:.88rem;color:#475569;margin-bottom:1.8rem;}
+
+.form-label{display:block;font-size:.77rem;font-weight:600;color:#334155;
+  margin-bottom:.32rem;letter-spacing:.03em;text-transform:uppercase;}
+body.rtl .form-label{text-transform:none;letter-spacing:0;}
+.form-input{width:100%;padding:.62rem .9rem;background:rgba(255,255,255,.75);
+  border:1px solid rgba(148,163,184,.33);border-radius:10px;
+  font-size:.9rem;font-family:inherit;color:#1e293b;outline:none;transition:all .2s;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.form-input:focus{border-color:rgba(var(--accent-rgb),.5);background:rgba(255,255,255,.95);
+  box-shadow:0 0 0 3px rgba(var(--accent-rgb),.11),0 1px 3px rgba(0,0,0,.04);}
+.form-input::placeholder{color:#94a3b8;}
+textarea.form-input{resize:vertical;min-height:80px;}
+select.form-input{cursor:pointer;}
+.field-group{margin-bottom:1.05rem;}
+
+.form-grid{display:grid;grid-template-columns:1fr;max-width:640px;gap:1.05rem;}
+
+.btn{display:inline-flex;align-items:center;gap:.45rem;padding:.62rem 1.35rem;
+  border-radius:10px;font-size:.875rem;font-weight:600;font-family:inherit;
+  cursor:pointer;border:none;transition:all .2s;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,rgb(var(--accent-light-rgb)),var(--accent));color:#fff;
+  box-shadow:0 4px 14px rgba(var(--accent-rgb),.28);}
+.btn-primary:hover{background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+  box-shadow:0 6px 18px rgba(var(--accent-rgb),.38);transform:translateY(-1px);}
+.btn-danger{background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.25);}
+.btn-danger:hover{background:rgba(239,68,68,.18);}
+.btn-ghost{background:rgba(148,163,184,.12);color:#475569;border:1px solid rgba(148,163,184,.25);}
+.btn-ghost:hover{background:rgba(148,163,184,.2);color:#334155;}
+.btn-warning{background:rgba(217,119,6,.1);color:#92400e;border:1px solid rgba(217,119,6,.22);}
+.btn-warning:hover{background:rgba(217,119,6,.18);}
+.btn-sm{padding:.38rem .85rem;font-size:.79rem;}
+.btn svg{width:14px;height:14px;}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.8rem;}
+.stat-card{padding:1.15rem 1.4rem;border-radius:16px;}
+.stat-card .stat-num{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--accent-deep);line-height:1;}
+body.rtl .stat-card .stat-num{font-family:'Cairo',sans-serif;}
+.stat-card .stat-label{font-size:.74rem;color:#64748b;margin-top:.28rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+body.rtl .stat-card .stat-label{text-transform:none;letter-spacing:0;}
+
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:1.15rem;margin-top:1.4rem;}
+.patient-card{padding:1.4rem;border-radius:18px;background:rgba(255,255,255,.56);
+  border:1px solid rgba(255,255,255,.68);box-shadow:0 4px 20px rgba(0,30,100,.08);
+  transition:all .22s;text-align:start;}
+.patient-card:hover{background:rgba(255,255,255,.78);box-shadow:0 8px 30px rgba(0,30,100,.13);transform:translateY(-3px);}
+.patient-card .avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--bg-3),var(--bg-4));
+  display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;
+  font-size:1.1rem;font-weight:700;color:var(--accent-deep);margin-bottom:.95rem;}
+.patient-card .p-name{font-weight:600;font-size:.93rem;color:#1e293b;margin-bottom:.28rem;}
+.patient-card .p-num{font-size:.78rem;color:#64748b;}
+.patient-card .p-badge{display:inline-block;margin-top:.65rem;padding:.2rem .62rem;
+  border-radius:20px;font-size:.7rem;font-weight:600;background:rgba(var(--accent-rgb),.1);color:var(--accent-dark);}
+
+.section-label{display:flex;align-items:center;gap:.7rem;font-size:.74rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin:1.7rem 0 .95rem;}
+body.rtl .section-label{text-transform:none;letter-spacing:0;}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(148,163,184,.25);}
+
+.appt-block{background:rgba(var(--accent-light-rgb),.12);border:1px solid rgba(var(--accent-light-rgb),.35);
+  border-radius:15px;padding:1.4rem;margin-top:.9rem;}
+.appt-block .appt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.5rem;}
+.appt-block .appt-title{font-weight:600;font-size:.88rem;color:var(--accent-deep);display:flex;align-items:center;gap:.4rem;}
+
+.med-table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;}
+thead tr th{background:rgba(var(--accent-rgb),.85);color:#fff;font-weight:600;font-size:.76rem;
+  text-transform:uppercase;letter-spacing:.05em;padding:.82rem 1rem;text-align:start;}
+body.rtl thead tr th{text-transform:none;letter-spacing:0;}
+thead tr th:first-child{border-radius:12px 0 0 0;}
+thead tr th:last-child{border-radius:0 12px 0 0;}
+body.rtl thead tr th:first-child{border-radius:0 12px 0 0;}
+body.rtl thead tr th:last-child{border-radius:12px 0 0 0;}
+tbody tr{transition:background .15s;}
+tbody tr:hover td{background:rgba(var(--accent-rgb),.05);}
+tbody tr td{padding:.78rem 1rem;border-bottom:1px solid rgba(148,163,184,.15);
+  color:#334155;background:rgba(255,255,255,.52);vertical-align:middle;}
+tbody tr:last-child td:first-child{border-radius:0 0 0 12px;}
+tbody tr:last-child td:last-child{border-radius:0 0 12px 0;}
+body.rtl tbody tr:last-child td:first-child{border-radius:0 0 12px 0;}
+body.rtl tbody tr:last-child td:last-child{border-radius:0 0 0 12px;}
+
+.empty-state{text-align:center;padding:3.5rem 2rem;color:#94a3b8;}
+.empty-state svg{width:46px;height:46px;margin:0 auto .9rem;opacity:.38;}
+.empty-state p{font-size:.9rem;}
+
+#toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;
+  display:flex;flex-direction:column;gap:.7rem;pointer-events:none;}
+body.rtl #toast-container{right:auto;left:2rem;}
+.toast{pointer-events:all;display:flex;align-items:center;gap:.72rem;
+  padding:.88rem 1.25rem;border-radius:14px;background:rgba(255,255,255,.93);
+  backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.82);
+  box-shadow:0 8px 30px rgba(0,0,0,.12);font-size:.875rem;font-weight:500;color:#1e293b;
+  animation:slideIn .3s ease,fadeOut .4s ease 2.6s forwards;max-width:330px;}
+.toast.success .toast-icon{color:#16a34a;}
+.toast.error   .toast-icon{color:#dc2626;}
+.toast.info    .toast-icon{color:var(--accent);}
+.toast svg{width:17px;height:17px;flex-shrink:0;}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0;pointer-events:none}}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);
+  z-index:200;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.dialog{background:rgba(255,255,255,.93);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.82);border-radius:20px;padding:2rem;
+  max-width:380px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.14);
+  animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes popIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.dialog h3{font-weight:700;font-size:1.02rem;color:#1e293b;margin-bottom:.48rem;}
+.dialog p{font-size:.875rem;color:#64748b;margin-bottom:1.45rem;}
+.dialog .dialog-actions{display:flex;gap:.72rem;justify-content:flex-end;}
+
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);backdrop-filter:blur(5px);
+  z-index:200;display:flex;align-items:flex-start;justify-content:center;
+  padding:2rem 1rem;overflow-y:auto;animation:fadeIn .2s ease;}
+.detail-modal{background:rgba(255,255,255,.94);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.82);border-radius:22px;padding:2.4rem;
+  max-width:700px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.14);
+  animation:popIn .3s cubic-bezier(.34,1.4,.64,1) both;position:relative;}
+.detail-modal .close-btn{position:absolute;top:1.1rem;right:1.1rem;background:rgba(0,0,0,.07);
+  border:none;border-radius:50%;width:31px;height:31px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#64748b;transition:all .15s;}
+body.rtl .detail-modal .close-btn{right:auto;left:1.1rem;}
+.detail-modal .close-btn:hover{background:rgba(0,0,0,.12);}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.15rem;}
+.info-item{padding:.88rem .95rem;background:rgba(241,245,249,.82);border-radius:12px;}
+.info-item .info-key{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.22rem;}
+body.rtl .info-item .info-key{text-transform:none;letter-spacing:0;}
+.info-item .info-val{font-size:.9rem;color:#1e293b;font-weight:500;}
+
+.ac-dropdown{position:absolute;display:none;background:rgba(255,255,255,.98);backdrop-filter:blur(16px);
+  border:1px solid rgba(203,213,225,.8);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);
+  max-height:220px;overflow-y:auto;z-index:500;}
+.ac-item{padding:.55rem .8rem;font-size:.85rem;color:#1e293b;cursor:pointer;border-bottom:1px solid rgba(241,245,249,.9);}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.ac-active{background:rgba(219,234,254,.6);}
+.ac-item small{display:block;font-size:.72rem;color:#94a3b8;margin-top:.1rem;}
+
+.signin-wrap{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:2rem 1rem;}
+.signin-card{width:100%;max-width:420px;padding:2.4rem;}
+.signin-logo{text-align:center;margin-bottom:1.9rem;}
+.signin-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,var(--bg-1),var(--bg-3));
+  border-radius:18px;display:inline-flex;align-items:center;justify-content:center;
+  margin-bottom:.95rem;box-shadow:0 4px 16px rgba(var(--accent-rgb),.2);}
+.signin-logo .icon svg{width:29px;height:29px;color:var(--accent);}
+
+#rx-preview{position:relative;width:170mm;height:240mm;margin:0 auto;background:#fdfcfb;
+  border-radius:5mm;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 2px 14px rgba(0,0,0,.06);font-family:'Cairo',sans-serif;}
+#rx-preview .header{background:#2c1a2e;margin:0 5.6mm;border-radius:0 0 6mm 6mm;
+  padding:5mm 6mm 6mm;display:flex;align-items:center;gap:3mm;direction:ltr;}
+#rx-preview .header .en-block{flex:1;min-width:0;direction:ltr;text-align:left;color:#fff;}
+#rx-preview .header .en-block .dr{font-weight:600;font-size:4.6mm;color:#fcce5b;letter-spacing:.5px;line-height:1.05;}
+#rx-preview .header .en-block .name{font-weight:700;font-size:5.6mm;color:#fcce5b;letter-spacing:0;line-height:1.05;margin-bottom:1.6mm;white-space:nowrap;}
+#rx-preview .header .en-block .sub1{font-weight:500;font-size:2.55mm;color:#fff;letter-spacing:.3px;line-height:1.35;}
+#rx-preview .header .en-block .sub2{font-weight:500;font-size:2.15mm;color:#fff;letter-spacing:.2px;line-height:1.5;margin-top:.6mm;}
+#rx-preview .header .logo-badge{flex:0 0 auto;width:33mm;height:41mm;border-radius:7mm;overflow:hidden;background:#fdfcfb;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+#rx-preview .header .logo-badge img{width:100%;height:100%;object-fit:cover;display:block;}
+#rx-preview .header .ar-block{flex:1;min-width:0;direction:rtl;text-align:right;color:#fff;}
+#rx-preview .header .ar-block .doctor{font-weight:800;font-size:6.2mm;color:#fcce5b;line-height:1.05;}
+#rx-preview .header .ar-block .name{font-weight:800;font-size:7.6mm;color:#fcce5b;line-height:1.1;margin-bottom:1.2mm;white-space:nowrap;letter-spacing:.5px;}
+#rx-preview .header .ar-block .sub{font-weight:700;font-size:2.3mm;color:#fff;line-height:1.55;}
+
+#rx-preview .patientbar{margin:2.4mm 5.6mm 0;border-radius:4mm;
+  background:linear-gradient(120deg,#c8862e 0%,#f0c674 22%,#c8862e 48%,#f0c674 74%,#c8862e 100%);
+  padding:2.6mm 4mm;}
+#rx-preview .pb-row{display:flex;align-items:center;gap:2.2mm;padding:1.4mm 0;}
+#rx-preview .pb-row + .pb-row{border-top:1px solid rgba(255,255,255,.35);}
+#rx-preview .pb-field{display:flex;align-items:center;gap:1.6mm;}
+#rx-preview .pb-field.grow{flex:1;min-width:0;}
+#rx-preview .pb-field label{font-weight:800;font-size:2.95mm;color:#fff;white-space:nowrap;text-shadow:0 1px 1px rgba(0,0,0,.15);}
+#rx-preview .pb-dots{flex:1;min-width:10mm;height:5mm;background:#fff;border-radius:1.8mm;
+  border:1px dashed #b9863a;display:flex;align-items:center;padding:0 1.8mm;overflow:hidden;
+  font-weight:600;font-size:2.7mm;color:#241526;white-space:nowrap;text-overflow:ellipsis;}
+#rx-preview .pb-field.short .pb-dots{flex:0 0 24mm;}
+
+#rx-preview .body{position:relative;flex:1;background:#fdfcfb;overflow:hidden;padding:9mm 8mm 24mm;direction:rtl;}
+#rx-preview .rx-mark{position:absolute;top:5mm;left:6mm;width:15mm;z-index:1;}
+#rx-preview .rx-mark img{width:100%;display:block;}
+#rx-preview .watermark{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);width:54%;opacity:.92;pointer-events:none;z-index:0;}
+#rx-preview .watermark img{width:100%;display:block;}
+#rx-preview .rx-drug-line{position:relative;z-index:1;display:flex;gap:1.6mm;padding:1.6mm 1mm;
+  border-bottom:1px dashed rgba(44,26,46,.2);align-items:flex-start;}
+#rx-preview .rx-drug-num{font-weight:700;color:#2c1a2e;font-size:3.1mm;min-width:5mm;}
+#rx-preview .rx-drug-name{font-weight:700;font-size:3.2mm;color:#1e1320;}
+#rx-preview .rx-drug-dose{font-size:2.7mm;color:#475569;margin-top:.4mm;}
+#rx-preview .rx-notes-box{position:relative;z-index:1;margin-top:2.6mm;padding:1.8mm 2.6mm;font-size:2.8mm;color:#475569;
+  background:rgba(240,198,116,.22);border-radius:2mm;border:1px solid rgba(44,26,46,.12);}
+#rx-preview .signature{position:absolute;left:6mm;bottom:6mm;width:46mm;z-index:1;}
+#rx-preview .signature img{width:100%;display:block;}
+#rx-preview .qr-badge{position:absolute;right:6mm;bottom:6mm;width:24mm;z-index:1;}
+#rx-preview .qr-badge img{width:100%;display:block;border-radius:2mm;}
+
+#rx-preview .footer-gold{height:2.6mm;background:linear-gradient(90deg,#c8862e,#f0c674,#dca63c,#f0c674,#c8862e);}
+#rx-preview .footer{background:#2c1a2e;padding:3mm 5.6mm 4mm;color:#fff;}
+#rx-preview .pills{display:flex;gap:2.2mm;margin-bottom:2.6mm;direction:ltr;}
+#rx-preview .pill{background:#fff;color:#241526;border-radius:5mm;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2.9mm;padding:1.6mm 3mm;}
+#rx-preview .pill.date{flex:0 0 26mm;gap:2mm;direction:ltr;}
+#rx-preview .pill.info{flex:1;gap:2.4mm;direction:rtl;}
+#rx-preview .pill.info .divider{width:1px;height:4mm;background:#241526;opacity:.6;}
+#rx-preview .contact-row{display:flex;align-items:center;gap:2mm;margin-top:1.6mm;}
+#rx-preview .icon-badge{flex:0 0 auto;width:5mm;height:5mm;border-radius:1.3mm;display:flex;align-items:center;justify-content:center;}
+#rx-preview .icon-badge.wa{background:#2fa53e;}
+#rx-preview .icon-badge.ph,#rx-preview .icon-badge.pin{background:#fcce5b;}
+#rx-preview .icon-badge svg{width:3.1mm;height:3.1mm;}
+#rx-preview .phone-num{font-weight:700;font-size:3.6mm;letter-spacing:.3px;direction:ltr;white-space:nowrap;}
+#rx-preview .phone-num .accent{color:#fcce5b;}
+#rx-preview .address-txt{font-weight:700;font-size:2.55mm;color:#fff;flex:1;text-align:right;}
+
+#rx-preview.rx-overlay-mode{background:transparent;box-shadow:none;}
+.rx-overlay-mode .header,.rx-overlay-mode .patientbar,.rx-overlay-mode .footer-gold,.rx-overlay-mode .footer{background:transparent !important;}
+.rx-overlay-mode .header .en-block,.rx-overlay-mode .header .ar-block,.rx-overlay-mode .header .logo-badge{visibility:hidden;}
+.rx-overlay-mode .pb-field label{visibility:hidden;}
+.rx-overlay-mode .pb-dots{background:transparent;border:none;}
+.rx-overlay-mode .rx-mark,.rx-overlay-mode .watermark,.rx-overlay-mode .signature,.rx-overlay-mode .qr-badge{visibility:hidden;}
+.rx-overlay-mode .rx-drug-line{border-bottom:none;}
+.rx-overlay-mode .rx-notes-box{background:transparent;border:none;padding:1.8mm 0;}
+.rx-overlay-mode .pills,.rx-overlay-mode .contact-row{visibility:hidden;}
+
+@media(max-width:680px){
+  .navbar{padding:0 1rem;flex-wrap:wrap;height:auto;padding-top:.55rem;padding-bottom:.55rem;}
+  .nav-links{justify-content:flex-start;}
+  .nav-search{min-width:0;width:100%;}
+  .form-grid{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr;}
+  .brand{font-size:1rem;}
+  
+  #rx-preview-wrap{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav class="navbar" id="navbar" style="display:none">
+    <div class="brand" id="brand-el">Dr. Mahmoud <span>Risha</span></div>
+    <div class="nav-links" id="nav-links-el"></div>
+    <div class="nav-right">
+      <div class="nav-search" style="position:relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+        <input type="text" id="globalSearch" autocomplete="off" oninput="onSearch(this.value)" onfocus="onSearch(this.value)" onblur="setTimeout(closeGlobalSearch,180)"/>
+        <div id="global-search-dropdown" class="ac-dropdown" style="position:absolute;top:100%;left:0;right:0;margin-top:.35rem;width:auto"></div>
+      </div>
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
+    </div>
+  </nav>
+
+  <div id="page-signIn"></div>
+  <div id="page-home"         style="display:none"></div>
+  <div id="page-patients"     style="display:none"></div>
+  <div id="page-addPatient"   style="display:none"></div>
+  <div id="page-prescription" style="display:none"></div>
+  <div id="page-booking"      style="display:none"></div>
+  <div id="page-settings"     style="display:none"></div>
+
+  <div id="toast-container"></div>
+
+  <div id="confirm-overlay" class="overlay" style="display:none">
+    <div class="dialog glass-card">
+      <h3 id="conf-title"></h3>
+      <p  id="conf-msg"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" onclick="resolveConfirm(false)" id="conf-cancel"></button>
+        <button class="btn btn-danger" onclick="resolveConfirm(true)"  id="conf-ok"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="detail-overlay" class="detail-overlay" style="display:none" onclick="closeDetailBg(event)">
+    <div class="detail-modal" id="detail-modal"></div>
+  </div>
+
+  <div id="ac-dropdown" class="ac-dropdown"></div>
+</div>
+<script>
+
+const LANG = {
+en:{
+  brand:'Dr. Mahmoud Risha',
+  doctorName:'Dr Mahmoud Risha', specialty:'Rheumatology Consultant, MD',
+  home:'Home', addPatient:'Add Patient', medications:'Medications',
+  prescription:'Prescription',
+  searchPh:'Search name / number…',
+  signInTitle:'Sign In', username:'Username', password:'Password', loginBtn:'Sign In',
+  systemSub:'Patient Management System',
+  welcome:'Welcome back!', badCreds:'Invalid username or password.',
+  dashTitle:'Patient Dashboard', dashSub:'Overview of all registered patients',
+  statPt:'Total Patients', statAppt:'Appointments', statMed:'Medications',
+  noPatients:'No patients found.',
+  viewDetail:'View Details',
+  patInfo:'Patient Information', medHist:'Medical History',
+  patNo:'Patient Number', fullName:'Full Name', age:'Age', gender:'Gender',
+  male:'Male', female:'Female',
+  prevOps:'Previous Operations', prevTreat:'Previous Treatment',
+  diag:'Diagnosis', symptoms:'Symptoms', famHist:'Family History',
+  
+  mobileNum:'Mobile Number', emergencyContact:'Emergency Contact', patientNotes:'Notes',
+  
+  medHistExtra:'Extended Medical History',
+  mhxJointSec:'Joint Symptoms',
+  jointPain:'Joint Pain', jointSwelling:'Joint Swelling', jointStiffness:'Joint Stiffness (Morning Stiffness)',
+  jointStiffnessMinutes:'Duration (minutes)', jointWarmthRedness:'Joint Warmth / Redness',
+  limitedRangeOfMotion:'Limited Range of Motion', jointDeformity:'Joint Deformity',
+  jointInvolvementPattern:'Involvement Pattern', jointPatternNone:'N/A', jointPatternSymmetric:'Symmetric', jointPatternAsymmetric:'Asymmetric',
+  mhxSystemicSec:'Systemic Symptoms',
+  fatigue:'Fatigue', lowGradeFever:'Low-grade Fever', weightLoss:'Unexplained Weight Loss', malaise:'Malaise', nightSweats:'Night Sweats',
+  mhxSkinSec:'Skin / Mucosal',
+  rash:'Rash (Malar / Photosensitive / Psoriatic)', nodules:'Nodules (Subcutaneous / Rheumatoid)',
+  raynauds:"Raynaud's Phenomenon", oralUlcers:'Oral Ulcers', nailChanges:'Nail Changes (Pitting / Onycholysis)', hairLoss:'Hair Loss',
+  mhxMskSec:'Musculoskeletal — Other',
+  muscleWeakness:'Muscle Weakness', musclePain:'Muscle Pain (Myalgia)', inflammatoryBackPain:'Back Pain (Inflammatory Pattern)',
+  enthesitis:'Enthesitis (Tendon/Ligament Insertion Pain)', dactylitis:'Dactylitis ("Sausage Digit")',
+  mhxEyeSec:'Eye Involvement',
+  dryEyes:'Dry Eyes', eyeRednessPain:'Eye Redness / Pain (Uveitis)', photophobia:'Photophobia',
+  mhxOtherOrganSec:'Other Organ Involvement',
+  dryMouth:'Dry Mouth', pleuriticChestPain:'Chest Pain (Pleuritic)', shortnessOfBreath:'Shortness of Breath',
+  dysphagia:'Dysphagia', siccaSymptoms:'Sicca Symptoms', peripheralNeuropathy:'Peripheral Numbness / Tingling (Neuropathy)',
+  mhxConstSec:'Constitutional / Functional',
+  reducedGripStrength:'Reduced Grip Strength', difficultyDailyActivities:'Difficulty with Daily Activities', sleepDisturbance:'Sleep Disturbance Due to Pain',
+  yes:'Yes', no:'No',
+  
+  printPatientReport:'Print Patient Report', patientReportTitle:'Patient Report',
+  dupTitle:'Duplicate Patient', dupMsg:'A patient with this mobile number already exists:',
+  apptSec:'Appointments', addAppt:'+ Add Appointment',
+  apptDate:'Date', drugs:'Drugs / Medications', reqTests:'Required Tests',
+  testRes:'Test Result', xrayReq:'X-Ray Required', xrayRes:'X-Ray Result',
+  
+  testResultFile:'Attach Test Result (PDF/PNG/JPG)', xrayResultFile:'Attach X-Ray Result (PDF/PNG/JPG)',
+  noFiles:'No files attached.', fileUploaded:'File uploaded!', fileUploadFailed:'File upload failed.',
+  invalidFileType:'Only PDF, PNG, JPG or JPEG files are allowed.',
+  savePatient:'Save Patient', cancel:'Cancel', edit:'Edit', save:'Save', del:'Delete',
+  patSaved:'Patient saved successfully!', fillFields:'Please fill all required fields.',
+  noAppts:'No appointments recorded.',
+  medTitle:'Medications', medSub:'Manage your medication database',
+  addNewMed:'Add New Medication', medName:'Medication Name', company:'Company Name',
+  purpose:'Purpose / Notes', addMedBtn:'Add Medication', medRecords:'Medication Records',
+  medCompany:'Company', dateAdded:'Date Added', actions:'Actions',
+  noMeds:'No medications found.', medAdded:'Medication added!', medDeleted:'Medication deleted.',
+  genericName:'Generic Name', category:'Category', dosage:'Dosage',
+  sortBy:'Sort by', sortNameAsc:'Name (A–Z)', sortNameDesc:'Name (Z–A)', sortCategory:'Category', sortRecent:'Most recent',
+  rxTitle:'Prescription', rxSub:'Generate and print medical prescriptions',
+  selectPt:'Select Patient', rxDate:'Date', rxDiag:'Diagnosis',
+  searchPtPh:'Search by name, mobile number, or patient ID…', recentPatients:'Recent Patients', noPtMatch:'No matching patients.',
+  reopenRx:'Reopen', printOldRx:'Print',
+  rxNotes:"Doctor's Notes", addDrug:'+ Add Drug', drugName:'Drug Name', drugDose:'Dosage / Instructions',
+  printRx:'Print', clearRx:'Clear',
+  
+  rxDocName:'DR MAHMOUD RISHA', rxSpecialty:'RHEUMATOLOGY CONSULTANT, MD',
+  rxDocNameAr:'دكتور محمود ريشة', rxSpecialtyAr:'استشاري الروماتيزم والمفاصل والعمود الفقري',
+  rxNameLabel:'Name:', rxDateLabel:'Date:', rxDiagLabel:'Diagnosis:', rxCode:'Code',
+  rxSigLabel:"Doctor's Signature",
+  rxFooter:'DR MAHMOUD RISHA — RHEUMATOLOGY CLINIC',
+  addDrugPh:'Add drugs using the form…',
+  
+  rxPrintModeLabel:'Print Mode', rxModeFull:'Full Layout (blank paper)', rxModeOverlay:'Overlay Only (pre-printed pad)',
+  rxModeOverlayHint:'Prints only the Diagnosis, Date, Patient Name, Age and Medication text — no header, footer or borders. Use this when printing onto pre-printed prescription pads.',
+  confirmDel:'Are you sure?', confirmDelMsg:'This action cannot be undone.',
+
+  editPatient:'Edit Patient', patientUpdated:'Patient updated successfully!',
+
+  booking:'Booking', bookingTitle:'Appointment Booking', bookingSub:'Book, reschedule and review appointments',
+  bookNewAppt:'Book New Appointment', visitType:'Visit Type', apptTime:'Time',
+  visitTypeConsult:'Check-up', visitTypeFollowUp:'Follow-up', visitTypeProcedure:'Procedure', visitTypeOther:'Other', minutesAbbrev:'min',
+  bookBtn:'Book Appointment', selectPtFirst:'Please select a patient.', apptBooked:'Appointment booked!',
+  filterByDate:'Filter by Date', showAll:'Show All', upcomingAppts:'Appointments',
+  reschedule:'Reschedule', apptRescheduled:'Appointment rescheduled.', cancelAppt:'Cancel Appointment',
+  apptCancelled:'Appointment cancelled.', status:'Status', noApptsFound:'No appointments found.',
+  bookingSearchPh:'Search by patient name / number…', suggestNextSlot:'Suggest Next Slot',
+  financialSearchPh:'Search by patient name / description…',
+  bookingBilling:'Billing (optional)', amountPaidNow:'Amount Paid Now', markFullyPaid:'Mark as Fully Paid',
+  bookingBillingHint:'Leave the amount blank to book without creating an invoice.',
+
+  queue:'Reception', queueTitle:"Today's Reception", queueSub:'Waiting list, check-in and booking control for today, all in one place',
+  statusWaiting:'Waiting', statusInConsultation:'In Consultation', statusCompleted:'Completed', statusCancelled:'Cancelled',
+  checkIn:'Check In', startConsult:'Start Consultation', complete:'Complete', noQueueToday:'No appointments scheduled for today.',
+  todaysBookings:"Today's Bookings", loading:'Loading…',
+
+  doctor:'Doctor', doctorDash:"Doctor's Dashboard", doctorDashSub:"Today's patient flow and visit notes",
+  currentPatient:'Current Patient', noCurrentPatient:'No patient currently in consultation.',
+  visitNotes:'Visit Notes', saveNotes:'Save Notes', notesSaved:'Visit notes saved.', completedToday:'Completed Today',
+
+  financial:'Financial', financialTitle:'Financial', financialSub:'Invoices, payments and revenue',
+  invoiceDesc:'Description', invoiceAmount:'Amount', invoicePatient:'Patient',
+  invoiceCreated:'Invoice created.', invoices:'Invoices',
+  totalBilled:'Total Billed', totalCollected:'Total Collected', totalOutstanding:'Total Outstanding',
+  recordPayment:'Record Payment', paymentAmount:'Payment Amount', paymentRecorded:'Payment recorded.',
+  balance:'Balance', paid:'Paid', unpaid:'Unpaid', partial:'Partial', noInvoices:'No invoices found.',
+  rxHistory:'Prescription History', billing:'Billing', noPrescriptions:'No prescriptions yet.',
+
+  reports:'Reports', reportsTitle:'Clinic Reports', reportsSub:'Visit and revenue analytics',
+  visitsPerDay:'Visits Per Day (last 14 days)', visitTypeBreakdown:'Visits by Type', revenueByStatus:'Revenue by Invoice Status',
+  newPatients30d:'New Patients (30d)',
+
+  settings:'Settings', settingsTitle:'Settings', settingsSub:'Clinic branding, availability and data backup',
+  branding:'Clinic Branding', saveBranding:'Save Branding', brandingSaved:'Branding updated.',
+  availability:'Doctor Availability', addAvailability:'+ Add Slot', dayOfWeek:'Day of Week',
+  startTime:'Start Time', endTime:'End Time', slotMinutes:'Slot Length (min)', noAvailability:'No availability configured.',
+  monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday', friday:'Friday', saturday:'Saturday', sunday:'Sunday',
+  backupData:'Backup / Export Data', downloadBackup:'Download Full Backup (JSON)',
+  appearance:'Appearance', appearanceSub:'Pick a calm, professional color theme for the app.', themeApplied:'Theme applied.',
+
+  patients:'Patients', patientsTitle:'Patients', patientsSub:'All patients registered in the system',
+  homeTitle:"Today", homeSub:"Today's bookings and live queue",
+  bookedToday:'Booked Today', waitingNow:'Waiting', completedTodayStat:'Completed', noBookingsToday:'No bookings for today.',
+  todaysQueue:"Today's Queue", nextTurn:'NEXT', inConsultationNow:'IN CONSULTATION',
+  statusArrived:'Arrived', markArrived:'Check In', markDone:'Done', patientOrder:'#',
+  bookAnyone:'Book Appointment', patientNameField:'Patient Name', patientPhoneField:'Phone Number',
+  chooseDay:'Day', chooseTime:'Time', nearestSlot:'Nearest available slot', pickSpecificTime:'Pick a specific time',
+  importAppointments:'Import Appointments from File', importScheduleBtn:'Import & Auto-Schedule',
+  importFileHint:'Upload a CSV or JSON file (columns: name, phone, visitType, date, time). Appointments are placed into their correct free slots automatically.',
+  importedCount:'appointments imported and scheduled.',
+  bookingRulesHint:'Clinic days: Sunday, Tuesday, Thursday · 4:00 PM – 9:00 PM · Check-up (كشف) 15 min, Follow-up (إعادة) 10 min.',
+  todaysBookingsList:'Bookings', noSlotsDay:'No free slots left on this day.',
+  addAppointmentBtn:'+ Add Appointment / Consultation', saveConsult:'Save', consultSaved:'Saved.',
+  apptDiag:'Diagnosis', apptDrugs:'Drugs', apptTests:'Required Tests', apptNotes:'Notes',
+  monthlyReport:'Monthly Report', monthlyReportSub:"Last month's clinic activity",
+  generateMonthlyReport:'Generate Monthly Report', reportMonth:'Month',
+  repNewVisits:'New Visits (كشف)', repFollowUps:'Follow-ups (إعادة)', repTotalVisits:'Total Visits',
+  repCollected:'Money Collected', repBilled:'Total Billed', repOutstanding:'Outstanding',
+  dataTransfer:'Data Backup & Transfer', exportData:'Export Data', importData:'Import Data',
+  importDataHint:'Import a JSON backup exported from this or another clinic system.', importDone:'Data imported.',
+},
+ar:{
+  brand:'د. محمود ريشة',
+  doctorName:'دكتور محمود ريشة', specialty:'استشاري الروماتيزم والمفاصل',
+  home:'الرئيسية', addPatient:'إضافة مريض', medications:'الأدوية',
+  prescription:'الروشتة',
+  searchPh:'ابحث بالاسم / الرقم…',
+  signInTitle:'تسجيل الدخول', username:'اسم المستخدم', password:'كلمة المرور', loginBtn:'دخول',
+  systemSub:'نظام إدارة المرضى',
+  welcome:'مرحباً بعودتك!', badCreds:'اسم المستخدم أو كلمة المرور غير صحيحة.',
+  dashTitle:'لوحة المرضى', dashSub:'نظرة عامة على جميع المرضى المسجلين',
+  statPt:'إجمالي المرضى', statAppt:'المواعيد', statMed:'الأدوية',
+  noPatients:'لا يوجد مرضى.',
+  viewDetail:'عرض التفاصيل',
+  patInfo:'بيانات المريض', medHist:'التاريخ الطبي',
+  patNo:'رقم المريض', fullName:'الاسم الكامل', age:'العمر', gender:'الجنس',
+  male:'ذكر', female:'أنثى',
+  prevOps:'العمليات السابقة', prevTreat:'العلاج السابق',
+  diag:'التشخيص', symptoms:'الأعراض', famHist:'التاريخ العائلي',
+  
+  medHistExtra:'التاريخ الطبي التفصيلي',
+  mhxJointSec:'أعراض المفاصل',
+  jointPain:'ألم بالمفاصل', jointSwelling:'ورم في المفاصل', jointStiffness:'تيبس المفاصل (تيبس صباحي)',
+  jointStiffnessMinutes:'المدة (بالدقائق)', jointWarmthRedness:'سخونة / احمرار المفصل',
+  limitedRangeOfMotion:'محدودية الحركة', jointDeformity:'تشوه بالمفصل',
+  jointInvolvementPattern:'نمط الإصابة', jointPatternNone:'لا يوجد', jointPatternSymmetric:'متماثل', jointPatternAsymmetric:'غير متماثل',
+  mhxSystemicSec:'أعراض عامة بالجسم',
+  fatigue:'إرهاق', lowGradeFever:'سخونة بسيطة', weightLoss:'فقدان وزن غير مبرر', malaise:'وعكة عامة', nightSweats:'تعرق ليلي',
+  mhxSkinSec:'الجلد والأغشية المخاطية',
+  rash:'طفح جلدي (فراشي / حساس للضوء / صدفي)', nodules:'عقيدات (تحت الجلد / روماتيزمية)',
+  raynauds:'ظاهرة رينود', oralUlcers:'قرح بالفم', nailChanges:'تغيرات بالأظافر (تنقر / انفصال الظفر)', hairLoss:'تساقط الشعر',
+  mhxMskSec:'أعراض عضلية هيكلية أخرى',
+  muscleWeakness:'ضعف عضلي', musclePain:'ألم عضلي', inflammatoryBackPain:'ألم بالظهر (نمط التهابي)',
+  enthesitis:'التهاب مرتكز الأوتار / الأربطة', dactylitis:'تورم الإصبع بالكامل (الإصبع السجقي)',
+  mhxEyeSec:'أعراض العين',
+  dryEyes:'جفاف العين', eyeRednessPain:'احمرار / ألم بالعين (التهاب العنبية)', photophobia:'حساسية للضوء',
+  mhxOtherOrganSec:'أعراض أعضاء أخرى',
+  dryMouth:'جفاف الفم', pleuriticChestPain:'ألم بالصدر (نمط جنبي)', shortnessOfBreath:'ضيق بالتنفس',
+  dysphagia:'صعوبة بالبلع', siccaSymptoms:'أعراض جفاف (متلازمة شوغرن)', peripheralNeuropathy:'تنميل / خدر بالأطراف (اعتلال عصبي)',
+  mhxConstSec:'أعراض وظيفية عامة',
+  reducedGripStrength:'ضعف قبضة اليد', difficultyDailyActivities:'صعوبة بأنشطة الحياة اليومية', sleepDisturbance:'اضطراب النوم بسبب الألم',
+  yes:'نعم', no:'لا',
+  
+  printPatientReport:'طباعة تقرير المريض', patientReportTitle:'تقرير المريض',
+  
+  mobileNum:'رقم الموبايل', emergencyContact:'رقم الطوارئ', patientNotes:'ملاحظات',
+  dupTitle:'مريض مكرر', dupMsg:'يوجد مريض مسجل بهذا رقم الموبايل من قبل:',
+  apptSec:'المواعيد', addAppt:'+ إضافة موعد',
+  apptDate:'التاريخ', drugs:'الأدوية الموصوفة', reqTests:'الفحوصات المطلوبة',
+  testRes:'نتيجة الفحوصات', xrayReq:'الأشعة المطلوبة', xrayRes:'نتيجة الأشعة',
+  
+  testResultFile:'إرفاق نتيجة الفحص (PDF/PNG/JPG)', xrayResultFile:'إرفاق نتيجة الأشعة (PDF/PNG/JPG)',
+  noFiles:'لا توجد ملفات مرفقة.', fileUploaded:'تم رفع الملف!', fileUploadFailed:'فشل رفع الملف.',
+  invalidFileType:'يُسمح فقط بملفات PDF أو PNG أو JPG أو JPEG.',
+  savePatient:'حفظ المريض', cancel:'إلغاء', edit:'تعديل', save:'حفظ', del:'حذف',
+  patSaved:'تم حفظ المريض بنجاح!', fillFields:'يرجى ملء جميع الحقول المطلوبة.',
+  noAppts:'لا توجد مواعيد مسجلة.',
+  medTitle:'الأدوية', medSub:'إدارة قاعدة بيانات الأدوية',
+  addNewMed:'إضافة دواء جديد', medName:'اسم الدواء', company:'اسم الشركة',
+  purpose:'الغرض / ملاحظات', addMedBtn:'إضافة دواء', medRecords:'سجلات الأدوية',
+  medCompany:'الشركة', dateAdded:'تاريخ الإضافة', actions:'الإجراءات',
+  noMeds:'لا توجد أدوية.', medAdded:'تم إضافة الدواء!', medDeleted:'تم حذف الدواء.',
+  genericName:'الاسم العلمي', category:'الفئة', dosage:'الجرعة',
+  sortBy:'ترتيب حسب', sortNameAsc:'الاسم (أ-ي)', sortNameDesc:'الاسم (ي-أ)', sortCategory:'الفئة', sortRecent:'الأحدث',
+  rxTitle:'الروشتة', rxSub:'إنشاء وطباعة الوصفات الطبية',
+  selectPt:'اختر المريض', rxDate:'التاريخ', rxDiag:'التشخيص',
+  searchPtPh:'بحث بالاسم أو رقم الموبايل أو رقم الملف…', recentPatients:'مرضى حديثون', noPtMatch:'لا يوجد مرضى مطابقون.',
+  reopenRx:'إعادة فتح', printOldRx:'طباعة',
+  rxNotes:'ملاحظات الطبيب', addDrug:'+ إضافة دواء', drugName:'اسم الدواء', drugDose:'الجرعة / التعليمات',
+  printRx:'طباعة', clearRx:'مسح',
+  
+  rxDocName:'دكتور محمود ريشة', rxSpecialty:'استشاري الروماتيزم والمفاصل والعمود الفقري',
+  rxDocNameAr:'دكتور محمود ريشة', rxSpecialtyAr:'استشاري الروماتيزم والمفاصل والعمود الفقري',
+  rxNameLabel:'الاسم:', rxDateLabel:'التاريخ:', rxDiagLabel:'التشخيص:', rxCode:'كود',
+  rxSigLabel:'توقيع الطبيب',
+  rxFooter:'دكتور محمود ريشة — عيادة الروماتيزم',
+  addDrugPh:'أضف الأدوية من النموذج…',
+  
+  rxPrintModeLabel:'وضع الطباعة', rxModeFull:'التصميم الكامل (ورق عادي)', rxModeOverlay:'النص فقط (نموذج مطبوع مسبقاً)',
+  rxModeOverlayHint:'يطبع فقط التشخيص والتاريخ واسم المريض والعمر والأدوية — بدون رأس أو تذييل أو حدود. استخدم هذا عند الطباعة على نماذج الروشتة المطبوعة مسبقاً.',
+  confirmDel:'هل أنت متأكد؟', confirmDelMsg:'لا يمكن التراجع عن هذا الإجراء.',
+
+  editPatient:'تعديل المريض', patientUpdated:'تم تحديث بيانات المريض بنجاح!',
+
+  booking:'الحجز', bookingTitle:'حجز المواعيد', bookingSub:'حجز وإعادة جدولة ومراجعة المواعيد',
+  bookNewAppt:'حجز موعد جديد', visitType:'نوع الزيارة', apptTime:'الوقت',
+  visitTypeConsult:'كشف', visitTypeFollowUp:'مراجعة', visitTypeProcedure:'إجراء طبي', visitTypeOther:'أخرى', minutesAbbrev:'د',
+  bookBtn:'حجز الموعد', selectPtFirst:'يرجى اختيار مريض.', apptBooked:'تم حجز الموعد!',
+  filterByDate:'تصفية بالتاريخ', showAll:'عرض الكل', upcomingAppts:'المواعيد',
+  reschedule:'إعادة جدولة', apptRescheduled:'تم إعادة جدولة الموعد.', cancelAppt:'إلغاء الموعد',
+  apptCancelled:'تم إلغاء الموعد.', status:'الحالة', noApptsFound:'لا توجد مواعيد.',
+  bookingSearchPh:'بحث باسم المريض / الرقم…', suggestNextSlot:'اقترح أقرب موعد متاح',
+  financialSearchPh:'بحث باسم المريض / الوصف…',
+  bookingBilling:'الفواتير (اختياري)', amountPaidNow:'المبلغ المدفوع الآن', markFullyPaid:'تحديد كمدفوعة بالكامل',
+  bookingBillingHint:'اترك المبلغ فارغاً لحجز الموعد بدون إنشاء فاتورة.',
+
+  queue:'الاستقبال', queueTitle:'استقبال اليوم', queueSub:'قائمة الانتظار وتسجيل الحضور والتحكم في الحجوزات لليوم في مكان واحد',
+  statusWaiting:'في الانتظار', statusInConsultation:'في الكشف', statusCompleted:'مكتمل', statusCancelled:'ملغي',
+  checkIn:'تسجيل الحضور', startConsult:'بدء الكشف', complete:'إنهاء', noQueueToday:'لا توجد مواعيد مجدولة لليوم.',
+  todaysBookings:'حجوزات اليوم', loading:'جاري التحميل…',
+
+  doctor:'الطبيب', doctorDash:'لوحة الطبيب', doctorDashSub:'حركة المرضى وملاحظات الزيارة لليوم',
+  currentPatient:'المريض الحالي', noCurrentPatient:'لا يوجد مريض في الكشف حالياً.',
+  visitNotes:'ملاحظات الزيارة', saveNotes:'حفظ الملاحظات', notesSaved:'تم حفظ ملاحظات الزيارة.', completedToday:'المكتمل اليوم',
+
+  financial:'المالية', financialTitle:'المالية', financialSub:'الفواتير والمدفوعات والإيرادات',
+  invoiceDesc:'الوصف', invoiceAmount:'المبلغ', invoicePatient:'المريض',
+  invoiceCreated:'تم إنشاء الفاتورة.', invoices:'الفواتير',
+  totalBilled:'إجمالي الفواتير', totalCollected:'إجمالي المُحصّل', totalOutstanding:'إجمالي المتبقي',
+  recordPayment:'تسجيل دفعة', paymentAmount:'مبلغ الدفعة', paymentRecorded:'تم تسجيل الدفعة.',
+  balance:'المتبقي', paid:'مدفوعة', unpaid:'غير مدفوعة', partial:'مدفوعة جزئياً', noInvoices:'لا توجد فواتير.',
+  rxHistory:'سجل الروشتات', billing:'الفواتير', noPrescriptions:'لا توجد روشتات بعد.',
+
+  reports:'التقارير', reportsTitle:'تقارير العيادة', reportsSub:'تحليلات الزيارات والإيرادات',
+  visitsPerDay:'الزيارات اليومية (آخر 14 يوم)', visitTypeBreakdown:'الزيارات حسب النوع', revenueByStatus:'الإيرادات حسب حالة الفاتورة',
+  newPatients30d:'مرضى جدد (30 يوم)',
+
+  settings:'الإعدادات', settingsTitle:'الإعدادات', settingsSub:'بيانات العيادة والمواعيد المتاحة ونسخ احتياطي للبيانات',
+  branding:'بيانات العيادة', saveBranding:'حفظ البيانات', brandingSaved:'تم تحديث بيانات العيادة.',
+  availability:'مواعيد الطبيب المتاحة', addAvailability:'+ إضافة موعد', dayOfWeek:'اليوم',
+  startTime:'وقت البدء', endTime:'وقت الانتهاء', slotMinutes:'مدة الموعد (دقيقة)', noAvailability:'لا توجد مواعيد متاحة محددة.',
+  monday:'الإثنين', tuesday:'الثلاثاء', wednesday:'الأربعاء', thursday:'الخميس', friday:'الجمعة', saturday:'السبت', sunday:'الأحد',
+  backupData:'نسخ احتياطي / تصدير البيانات', downloadBackup:'تحميل نسخة احتياطية كاملة (JSON)',
+  appearance:'المظهر', appearanceSub:'اختر نمط ألوان هادئ واحترافي للتطبيق.', themeApplied:'تم تطبيق المظهر.',
+
+  patients:'المرضى', patientsTitle:'المرضى', patientsSub:'جميع المرضى المسجلين في النظام',
+  homeTitle:'اليوم', homeSub:'حجوزات اليوم وقائمة الانتظار المباشرة',
+  bookedToday:'حجوزات اليوم', waitingNow:'في الانتظار', completedTodayStat:'مكتمل', noBookingsToday:'لا توجد حجوزات لليوم.',
+  todaysQueue:'قائمة انتظار اليوم', nextTurn:'التالي', inConsultationNow:'في الكشف',
+  statusArrived:'حضر', markArrived:'تسجيل حضور', markDone:'إنهاء', patientOrder:'#',
+  bookAnyone:'حجز موعد', patientNameField:'اسم المريض', patientPhoneField:'رقم الهاتف',
+  chooseDay:'اليوم', chooseTime:'الوقت', nearestSlot:'أقرب موعد متاح', pickSpecificTime:'اختيار وقت محدد',
+  importAppointments:'استيراد المواعيد من ملف', importScheduleBtn:'استيراد وجدولة تلقائية',
+  importFileHint:'ارفع ملف CSV أو JSON (الأعمدة: name, phone, visitType, date, time). يتم وضع المواعيد في الأوقات المتاحة الصحيحة تلقائياً.',
+  importedCount:'موعد تم استيراده وجدولته.',
+  bookingRulesHint:'أيام العيادة: الأحد، الثلاثاء، الخميس · من ٤:٠٠ م إلى ٩:٠٠ م · كشف ١٥ دقيقة، إعادة ١٠ دقائق.',
+  todaysBookingsList:'الحجوزات', noSlotsDay:'لا توجد مواعيد متاحة في هذا اليوم.',
+  addAppointmentBtn:'+ إضافة موعد / كشف', saveConsult:'حفظ', consultSaved:'تم الحفظ.',
+  apptDiag:'التشخيص', apptDrugs:'الأدوية', apptTests:'الفحوصات المطلوبة', apptNotes:'ملاحظات',
+  monthlyReport:'التقرير الشهري', monthlyReportSub:'نشاط العيادة خلال الشهر الماضي',
+  generateMonthlyReport:'إنشاء التقرير الشهري', reportMonth:'الشهر',
+  repNewVisits:'كشف جديد', repFollowUps:'إعادة', repTotalVisits:'إجمالي الزيارات',
+  repCollected:'المبالغ المحصّلة', repBilled:'إجمالي الفواتير', repOutstanding:'المتبقي',
+  dataTransfer:'نسخ ونقل البيانات', exportData:'تصدير البيانات', importData:'استيراد البيانات',
+  importDataHint:'استيراد نسخة احتياطية JSON مُصدّرة من هذا النظام أو نظام آخر.', importDone:'تم استيراد البيانات.',
+}};
+
+let currentLang = 'en';
+function t(k){ return LANG[currentLang][k] ?? LANG.en[k] ?? k; }
+
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+function toggleLang(){
+  currentLang = currentLang === 'en' ? 'ar' : 'en';
+  const isAr = currentLang === 'ar';
+  document.body.classList.toggle('rtl', isAr);
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir  = isAr ? 'rtl' : 'ltr';
+  document.getElementById('langBtn').textContent = isAr ? 'English' : 'عربي';
+  document.getElementById('globalSearch').placeholder = t('searchPh');
+  navigate(state.currentPage);
+}
+
+const THEMES = [
+  { id:'ocean',    name:'Ocean Blue',   accentLightRgb:'59,130,246',  accentRgb:'37,99,235',  accentDarkRgb:'29,78,216',  accentDeep:'#1e3a8a', bg:['#dbeafe','#e0e7ff','#bfdbfe','#c7d2fe'] },
+  { id:'slate',    name:'Slate Gray',   accentLightRgb:'100,116,139', accentRgb:'71,85,105',  accentDarkRgb:'51,65,85',   accentDeep:'#1e293b', bg:['#f1f5f9','#e2e8f0','#e0e7ef','#cbd5e1'] },
+  { id:'teal',     name:'Soft Teal',    accentLightRgb:'45,212,191',  accentRgb:'13,148,136', accentDarkRgb:'15,118,110', accentDeep:'#134e4a', bg:['#ccfbf1','#e0f2fe','#a7f3d0','#bae6fd'] },
+  { id:'sage',     name:'Sage Emerald', accentLightRgb:'52,211,153',  accentRgb:'5,150,105',  accentDarkRgb:'4,120,87',   accentDeep:'#064e3b', bg:['#d1fae5','#ecfdf5','#a7f3d0','#d9f99d'] },
+  { id:'lavender', name:'Lavender',     accentLightRgb:'167,139,250', accentRgb:'124,58,237', accentDarkRgb:'109,40,217', accentDeep:'#3b0764', bg:['#ede9fe','#f3e8ff','#ddd6fe','#e9d5ff'] },
+  { id:'rose',     name:'Dusty Rose',   accentLightRgb:'251,113,133', accentRgb:'225,29,72',  accentDarkRgb:'190,18,60',  accentDeep:'#881337', bg:['#ffe4e6','#fdf2f8','#fecdd3','#fbcfe8'] },
+  { id:'sand',     name:'Warm Sand',    accentLightRgb:'217,180,109', accentRgb:'180,140,60',  accentDarkRgb:'146,108,38', accentDeep:'#5c4317', bg:['#fef3c7','#fdf6e3','#fde68a','#fae8c8'] },
+  { id:'sky',      name:'Sky Blue',     accentLightRgb:'56,189,248',  accentRgb:'2,132,199',  accentDarkRgb:'3,105,161',  accentDeep:'#0c4a6e', bg:['#e0f2fe','#ecfeff','#bae6fd','#cffafe'] },
+  { id:'indigo',   name:'Deep Indigo',  accentLightRgb:'129,140,248', accentRgb:'79,70,229',  accentDarkRgb:'67,56,202',  accentDeep:'#1e1b4b', bg:['#e0e7ff','#ede9fe','#c7d2fe','#ddd6fe'] },
+  { id:'mint',     name:'Mint',         accentLightRgb:'110,231,183', accentRgb:'20,184,166', accentDarkRgb:'13,148,136', accentDeep:'#134e4a', bg:['#d1fae5','#ccfbf1','#a7f3d0','#99f6e4'] },
+  { id:'plum',     name:'Plum',         accentLightRgb:'192,132,252', accentRgb:'147,51,234', accentDarkRgb:'126,34,206', accentDeep:'#4a044e', bg:['#f3e8ff','#fae8ff','#e9d5ff','#f5d0fe'] },
+  { id:'charcoal', name:'Charcoal',     accentLightRgb:'148,163,184', accentRgb:'71,85,105',  accentDarkRgb:'30,41,59',   accentDeep:'#0f172a', bg:['#e2e8f0','#f1f5f9','#cbd5e1','#e2e8f0'] },
+];
+const THEME_STORAGE_KEY = 'clinicTheme';
+
+function applyTheme(themeId, opts){
+  const theme = THEMES.find(th => th.id === themeId) || THEMES[0];
+  const root = document.documentElement.style;
+  root.setProperty('--accent-light-rgb', theme.accentLightRgb);
+  root.setProperty('--accent-rgb', theme.accentRgb);
+  root.setProperty('--accent-dark-rgb', theme.accentDarkRgb);
+  root.setProperty('--accent-deep', theme.accentDeep);
+  root.setProperty('--bg-1', theme.bg[0]);
+  root.setProperty('--bg-2', theme.bg[1]);
+  root.setProperty('--bg-3', theme.bg[2]);
+  root.setProperty('--bg-4', theme.bg[3]);
+  state.activeTheme = theme.id;
+  localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+  if(opts && opts.rerenderSettings && document.getElementById('page-settings')) renderSettings();
+}
+
+const state = {
+  currentPage:'signIn',
+  patients:[], appointments:[],
+  searchQuery:'',
+  rxPatient: null, rxDiagnosis:'', rxNotes:'', rxDrugs:[], rxDate:null,
+  rxPatientQuery:'', rxPatientDropdownOpen:false,
+  
+  rxPrintMode: localStorage.getItem('rxPrintMode')||'full',
+  currentPatientRxHistory:[],
+  
+  editingPatientId:null,
+  
+  nextPatientNumber:null,
+  
+  medicalHistoryExtra:{},
+  
+  bookingVisitType:'consultation', bookingDay:'', bookingList:[], bookingLoaded:false,
+  bookingValidDays:[], bookingSlots:[], bookingSearch:'',
+  homeQueue:[], homeQueueLoaded:false,
+  reportsData:null,
+  settingsLoaded:false,
+  activeTheme:'ocean',
+};
+
+const API_BASE='/api';
+async function apiError(res){
+  let data={};
+  try{ data=await res.json(); }catch(e){}
+  const err=new Error(data.message||data.error||`Request failed (${res.status})`);
+  err.status=res.status; err.data=data;
+  return err;
+}
+async function apiFetch(path,opts){
+  try{ return await fetch(API_BASE+path,opts); }
+  catch(e){ throw new Error('Cannot reach the server. Make sure the app is running and try again.'); }
+}
+async function apiGet(path){
+  const res=await apiFetch(path);
+  if(!res.ok) throw await apiError(res);
+  return res.json();
+}
+async function apiSend(method,path,body){
+  const res=await apiFetch(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok) throw await apiError(res);
+  return res.json();
+}
+const apiPost=(path,body)=>apiSend('POST',path,body);
+const apiPut=(path,body)=>apiSend('PUT',path,body);
+async function apiDelete(path){
+  const res=await apiFetch(path,{method:'DELETE'});
+  if(!res.ok) throw await apiError(res);
+  return res.json();
+}
+
+async function apiUpload(path,formData){
+  const res=await apiFetch(path,{method:'POST',body:formData});
+  if(!res.ok) throw await apiError(res);
+  return res.json();
+}
+function uploadApptFile(patientId,appointmentId,category,file){
+  const fd=new FormData();
+  fd.append('file',file); fd.append('patientId',patientId);
+  fd.append('appointmentId',appointmentId); fd.append('category',category);
+  return apiUpload('/files/upload',fd);
+}
+
+let acTimer=null;
+function runAutocomplete(inputEl,kind){
+  clearTimeout(acTimer);
+  const q=inputEl.value.trim();
+  if(q.length<1){ hideAutocomplete(); return; }
+  acTimer=setTimeout(async()=>{
+    try{
+      const path=kind==='diagnosis'?'/diagnosis/search'
+        :kind==='medication'?'/medications/search'
+        :kind==='labTest'?'/lab-tests/search'
+        :'/radiology/search';
+      const items=await apiGet(`${path}?q=${encodeURIComponent(q)}`);
+      showAutocomplete(inputEl,kind,items);
+    }catch(e){ hideAutocomplete(); }
+  },250);
+}
+function showAutocomplete(inputEl,kind,items){
+  const dd=document.getElementById('ac-dropdown');
+  if(!items.length){ dd.style.display='none'; return; }
+  const rect=inputEl.getBoundingClientRect();
+  const width=Math.max(rect.width,300);
+  dd.style.left=(rect.left+window.scrollX)+'px';
+  dd.style.top=(rect.bottom+window.scrollY+4)+'px';
+  dd.style.width=width+'px';
+  dd.innerHTML=items.map((it,i)=>{
+    let label;
+    if(kind==='diagnosis') label=`${esc(it.diagnosis)}${it.code?` <small>${esc(it.code)}${it.specialty?' · '+esc(it.specialty):''}</small>`:''}`;
+    else if(kind==='medication') label=`${esc(it.drugName)}${it.genericName||it.dosage||it.category?` <small>${esc([it.genericName,it.category,it.dosage].filter(Boolean).join(' · '))}</small>`:''}`;
+    else if(kind==='labTest') label=`${esc(it.testName)}${it.code||it.category?` <small>${esc([it.code,it.category].filter(Boolean).join(' · '))}</small>`:''}`;
+    else label=`${esc(it.examName)}${it.code||it.category?` <small>${esc([it.code,it.category].filter(Boolean).join(' · '))}</small>`:''}`;
+    return `<div class="ac-item" data-i="${i}" onmousedown="event.preventDefault();pickAutocomplete(${i})">${label}</div>`;
+  }).join('');
+  dd._items=items; dd._inputEl=inputEl; dd._kind=kind; dd._active=-1;
+  dd.style.display='block';
+}
+function hideAutocomplete(){
+  const dd=document.getElementById('ac-dropdown');
+  if(dd){ dd.style.display='none'; dd._active=-1; }
+}
+function pickAutocomplete(i){
+  const dd=document.getElementById('ac-dropdown');
+  const item=dd._items[i], inputEl=dd._inputEl, kind=dd._kind;
+  hideAutocomplete();
+  applyAutocompletePick(inputEl,kind,item);
+}
+
+function handleAcKeydown(event,inputEl){
+  const dd=document.getElementById('ac-dropdown');
+  if(!dd||dd.style.display==='none'||dd._inputEl!==inputEl) return;
+  const items=dd.querySelectorAll('.ac-item');
+  if(event.key==='ArrowDown'){
+    event.preventDefault();
+    dd._active=Math.min((dd._active??-1)+1,items.length-1);
+  }else if(event.key==='ArrowUp'){
+    event.preventDefault();
+    dd._active=Math.max((dd._active??-1)-1,0);
+  }else if(event.key==='Enter'){
+    if(dd._active>=0&&dd._active<items.length){ event.preventDefault(); pickAutocomplete(dd._active); }
+    return;
+  }else if(event.key==='Escape'){
+    hideAutocomplete();
+    return;
+  }else return;
+  items.forEach((el,i)=>el.classList.toggle('ac-active',i===dd._active));
+  const activeEl=items[dd._active];
+  if(activeEl) activeEl.scrollIntoView({block:'nearest'});
+}
+function applyAutocompletePick(inputEl,kind,item){
+  const ctx=JSON.parse(inputEl.dataset.acCtx||'{}');
+  if(kind==='diagnosis'){
+    inputEl.value=item.diagnosis;
+    if(ctx.page==='appt') updateAppt(ctx.idx,'diagnosis',item.diagnosis);
+    else if(ctx.page==='rxDiag'){ state.rxDiagnosis=item.diagnosis; refreshRxPreview(); }
+  }else if(kind==='medication'){
+    inputEl.value=item.drugName;
+    if(ctx.page==='appt') updateAppt(ctx.idx,'drugs',item.drugName);
+    else if(ctx.page==='rxDrug'){
+      state.rxDrugs[ctx.idx].name=item.drugName;
+      if(item.dosage && !state.rxDrugs[ctx.idx].dose) state.rxDrugs[ctx.idx].dose=item.dosage;
+      renderPrescription();
+    }
+  }else if(kind==='labTest'){
+    inputEl.value=item.testName;
+    updateAppt(ctx.idx,'requiredTests',item.testName);
+  }else if(kind==='radiology'){
+    inputEl.value=item.examName;
+    updateAppt(ctx.idx,'medicalXRayRequired',item.examName);
+  }
+  inputEl.focus();
+}
+
+async function loadInitialData(){
+  try{
+    const res=await apiGet('/patients?perPage=500');
+    state.patients=res.items;
+  }catch(err){
+    state.patients=[];
+    toast('Some clinic data failed to load from the server.','error');
+  }
+}
+
+function toast(msg, type='success'){
+  const icons={
+    success:`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`,
+    error:`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>`,
+    info:`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>`,
+  };
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3100);
+}
+
+let _cr=null;
+function showConfirm(title,msg,okLabel){
+  document.getElementById('conf-title').textContent=title;
+  document.getElementById('conf-msg').textContent=msg;
+  document.getElementById('conf-cancel').textContent=t('cancel');
+  document.getElementById('conf-ok').textContent=okLabel||t('del');
+  document.getElementById('confirm-overlay').style.display='flex';
+  return new Promise(r=>{_cr=r;});
+}
+function resolveConfirm(v){
+  document.getElementById('confirm-overlay').style.display='none';
+  if(_cr){_cr(v);_cr=null;}
+}
+
+const ALL_PAGES=['signIn','home','patients','addPatient','prescription','booking','settings'];
+
+function navigate(page){
+  ALL_PAGES.forEach(p=>{
+    const el=document.getElementById(`page-${p}`);
+    if(el) el.style.display='none';
+  });
+  const navbar=document.getElementById('navbar');
+  navbar.style.display = page==='signIn' ? 'none' : 'flex';
+
+  buildNavLinks(page);
+
+  state.currentPage=page;
+  renderPage(page);
+  document.getElementById(`page-${page}`).style.display='';
+}
+
+function buildNavLinks(activePage){
+  document.getElementById('brand-el').textContent=t('brand');
+
+  const pages=[
+    {id:'home',        label:()=>t('home'),         icon:icoHome()},
+    {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
+    {id:'patients',    label:()=>t('patients'),     icon:icoQueue()},
+    {id:'prescription',label:()=>t('prescription'), icon:icoRx()},
+    {id:'settings',    label:()=>t('settings'),     icon:icoSettings()},
+  ];
+  document.getElementById('nav-links-el').innerHTML = pages.map(p=>`
+    <button class="nav-btn ${activePage===p.id?'active':''}" onclick="navigate('${p.id}')">
+      ${p.icon} ${p.label()}
+    </button>`).join('');
+
+  document.getElementById('globalSearch').placeholder=t('searchPh');
+}
+
+function renderPage(page){
+  if(page==='signIn')       renderSignIn();
+  else if(page==='home')        renderHome();
+  else if(page==='patients')    renderPatients();
+  else if(page==='addPatient')  renderAddPatient();
+  else if(page==='prescription')renderPrescription();
+  else if(page==='booking')     renderBooking();
+  else if(page==='settings')    renderSettings();
+}
+
+function onSearch(val){
+  state.searchQuery=val;
+  if(state.currentPage==='patients') renderPatients();
+  if(state.currentPage==='home') renderHome();
+  renderGlobalSearchDropdown(val);
+}
+function renderGlobalSearchDropdown(val){
+  const dd=document.getElementById('global-search-dropdown');
+  if(!dd) return;
+  const q=(val||'').toLowerCase().trim();
+  if(!q||state.currentPage==='signIn'){ dd.style.display='none'; return; }
+  const matches=state.patients.filter(p=>
+    (p.Name||'').toLowerCase().includes(q)||String(p.patientNumber||'').toLowerCase().includes(q)||String(p.mobileNumber||'').includes(q)
+  ).slice(0,12);
+  if(!matches.length){
+    dd.innerHTML=`<div class="ac-item" style="cursor:default;color:#94a3b8;font-style:italic">${t('noPatients')}</div>`;
+    dd.style.display='block'; return;
+  }
+  dd.innerHTML=matches.map(p=>{
+    const idx=state.patients.indexOf(p);
+    return `<div class="ac-item" onmousedown="event.preventDefault();openGlobalSearchResult(${idx})">
+      <div style="font-weight:600">${esc(p.Name)}</div>
+      <div style="font-size:0.72rem;color:#94a3b8">#${esc(p.patientNumber)} • ${esc(p.mobileNumber||'—')}</div>
+    </div>`;
+  }).join('');
+  dd.style.display='block';
+}
+function openGlobalSearchResult(idx){
+  closeGlobalSearch();
+  const input=document.getElementById('globalSearch');
+  if(input) input.value='';
+  state.searchQuery='';
+  openPatientDetail(idx);
+}
+function closeGlobalSearch(){
+  const dd=document.getElementById('global-search-dropdown');
+  if(dd) dd.style.display='none';
+}
+
+function filteredPatients(){
+  const q=state.searchQuery.toLowerCase().trim();
+  if(!q) return state.patients;
+  return state.patients.filter(p=>p.Name.toLowerCase().includes(q)||String(p.patientNumber).includes(q)||String(p.mobileNumber||'').includes(q));
+}
+
+const icoHome  = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3 12 2-2m0 0 7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11 2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6"/></svg>`;
+const icoAddPt = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
+const icoMed   = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>`;
+const icoRx    = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>`;
+const icoCalendar = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>`;
+
+const icoFile = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3.375 3.375 0 1 1 19.94 7.94l-9.193 9.193a1.875 1.875 0 0 1-2.652-2.652l8.214-8.214"/></svg>`;
+
+const icoPrint = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125V6.34m12 0V6.75"/></svg>`;
+
+const icoQueue = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
+const icoDoctor = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>`;
+const icoFinancial = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182.553-.439 1.278-.659 2.003-.659.725 0 1.45.22 2.003.659l.79.59M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
+const icoReports = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>`;
+const icoSettings = ()=>`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a7.65 7.65 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.213-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`;
+
+const icoPhone2 = ()=>`<svg viewBox="0 0 24 24" fill="#241526"><path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.7 3.6.7.6 0 1 .4 1 1v3.5c0 .6-.4 1-1 1C10.6 21.2 2.8 13.4 2.8 4.6c0-.6.4-1 1-1H7.3c.6 0 1 .4 1 1 0 1.3.2 2.5.7 3.6.1.4 0 .8-.2 1z"/></svg>`;
+const icoPin2 = ()=>`<svg viewBox="0 0 24 24" fill="#241526"><path d="M12 2C7.6 2 4 5.6 4 10c0 5.4 6.6 11.1 7.4 11.8.4.3.8.3 1.2 0C13.4 21.1 20 15.4 20 10c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>`;
+const icoWhatsapp2 = ()=>`<svg viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.2.2-.4.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.1-.2.1-.4 0-.5l-.5-1.1c-.1-.3-.3-.3-.5-.3h-.5c-.2 0-.5.1-.6.3-.2.2-.7.7-.7 1.7 0 1 .7 2 1 2.3.3.3 1.4 2.1 3.4 2.9 2 .8 2 .5 2.4.5.4 0 1.2-.5 1.4-1 .2-.5.2-.9.1-1z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>`;
+
+function renderSignIn(){
+  document.getElementById('page-signIn').innerHTML=`
+  <div class="signin-wrap">
+    <div class="signin-card glass-card">
+      <div class="signin-logo">
+        <div class="icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg>
+        </div>
+        <div class="page-heading" style="font-size:1.5rem;">${t('doctorName')}</div>
+        <p style="font-size:0.85rem;color:#64748b;margin-top:0.25rem;">${t('systemSub')}</p>
+      </div>
+      <div class="field-group">
+        <label class="form-label">${t('username')}</label>
+        <input class="form-input" type="text" id="si-user" placeholder="${t('username')}" autocomplete="off"/>
+      </div>
+      <div class="field-group">
+        <label class="form-label">${t('password')}</label>
+        <input class="form-input" type="password" id="si-pass" placeholder="••••••"
+          autocomplete="off" onkeydown="if(event.key==='Enter')doSignIn()"/>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.4rem" onclick="doSignIn()">
+        ${t('loginBtn')}
+      </button>
+      <div style="text-align:center;margin-top:1rem;">
+        <button class="lang-btn" onclick="toggleLang()">${currentLang==='en'?'عربي':'English'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function doSignIn(){
+  const u=document.getElementById('si-user').value.trim();
+  const p=document.getElementById('si-pass').value;
+  if(u==='Risha'&&p==='Risha12345'){
+    toast(t('welcome'),'success');
+    markAuthenticated();
+    document.getElementById('si-user').value='';
+    document.getElementById('si-pass').value='';
+    await loadInitialData();
+    navigate('home');
+  }
+  else{ toast(t('badCreds'),'error'); document.getElementById('si-pass').value=''; }
+}
+
+function todayISO(){ return new Date().toISOString().split('T')[0]; }
+
+async function fetchHomeQueue(){
+  try{
+    state.homeQueue=await apiGet(`/appointments?date=${todayISO()}`);
+  }catch(err){ state.homeQueue=[]; }
+  state.homeQueueLoaded=true;
+  if(state.currentPage==='home'){ renderHome(); document.getElementById('page-home').style.display=''; }
+}
+
+function homeQueueOrder(list){
+  return list.slice().sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))||a.id-b.id);
+}
+
+function patientIdxById(id){ return state.patients.findIndex(p=>p.id===id); }
+
+function renderHome(){
+  if(!state.homeQueueLoaded){
+    document.getElementById('page-home').innerHTML=`<div class="page"><div class="page-heading">${t('homeTitle')}</div><p class="page-sub">${t('loading')}</p></div>`;
+    fetchHomeQueue();
+    return;
+  }
+  const all=homeQueueOrder(state.homeQueue);
+  const active=all.filter(a=>a.status!=='cancelled');
+  const waiting=active.filter(a=>a.status==='waiting'||a.status==='arrived');
+  const completed=active.filter(a=>a.status==='completed');
+  const current=active.find(a=>a.status==='in_consultation');
+  const nextId=current?null:(waiting[0]?waiting[0].id:null);
+
+  const rowsHTML=active.length===0
+    ?`<div class="empty-state"><p>${t('noBookingsToday')}</p></div>`
+    :active.map((a,i)=>{
+      const isCurrent=a.status==='in_consultation';
+      const isNext=a.id===nextId;
+      const pIdx=patientIdxById(a.patientId);
+      const badge=isCurrent?`<span style="font-size:0.66rem;font-weight:800;color:#fff;background:#2563eb;padding:0.12rem 0.5rem;border-radius:999px">${t('inConsultationNow')}</span>`
+        :isNext?`<span style="font-size:0.66rem;font-weight:800;color:#fff;background:#16a34a;padding:0.12rem 0.5rem;border-radius:999px">${t('nextTurn')}</span>`:'';
+      const canStart=a.status==='waiting'||a.status==='arrived';
+      return `
+      <div class="glass-card" style="padding:0.85rem 1.1rem;margin-bottom:0.7rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;${isNext||isCurrent?'border:1.5px solid '+(isCurrent?'#2563eb':'#16a34a'):''}">
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--bg-3),var(--bg-4));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent-deep)">${i+1}</div>
+        <div style="flex:1;min-width:160px;cursor:pointer" onclick="${pIdx>=0?`openPatientDetail(${pIdx})`:''}">
+          <div style="font-weight:700;color:#1e293b;display:flex;align-items:center;gap:0.5rem">${esc(a.patientName||'—')} ${badge}</div>
+          <div style="font-size:0.76rem;color:#64748b">${esc(a.time||'')} · ${visitTypeLabel(a.visitType)} · <span style="color:${statusColor(a.status)};font-weight:700">${statusLabel(a.status)}</span></div>
+        </div>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          ${a.status==='waiting'?`<button class="btn btn-ghost btn-sm" onclick="setHomeStatus(${a.id},'arrived')">${t('markArrived')}</button>`:''}
+          ${canStart?`<button class="btn btn-primary btn-sm" onclick="setHomeStatus(${a.id},'in_consultation')">${t('startConsult')}</button>`:''}
+          ${isCurrent?`<button class="btn btn-primary btn-sm" onclick="setHomeStatus(${a.id},'completed')">${t('markDone')}</button>`:''}
+          ${a.status!=='completed'&&a.status!=='cancelled'?`<button class="btn btn-danger btn-sm" onclick="cancelHomeAppt(${a.id})">${t('cancelAppt')}</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('page-home').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('homeTitle')}</div>
+    <p class="page-sub">${t('homeSub')}</p>
+    <div class="stats-row">
+      <div class="stat-card glass-card"><div class="stat-num">${active.length}</div><div class="stat-label">${t('bookedToday')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${waiting.length}</div><div class="stat-label">${t('waitingNow')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${completed.length}</div><div class="stat-label">${t('completedTodayStat')}</div></div>
+    </div>
+    <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin:0.5rem 0 1rem">${t('todaysQueue')}</div>
+    ${rowsHTML}
+  </div>`;
+}
+
+async function setHomeStatus(id,status){
+  try{
+    await apiPut(`/appointments/${id}`,{status});
+    await refreshQueuesAndPatients();
+  }catch(err){ toast(err.message||'Failed to update status.','error'); }
+}
+async function cancelHomeAppt(id){
+  const confirmed=await showConfirm(t('confirmDel'),t('confirmDelMsg'),t('cancelAppt'));
+  if(!confirmed) return;
+  try{
+    await apiPut(`/appointments/${id}`,{status:'cancelled'});
+    toast(t('apptCancelled'),'info');
+    await refreshQueuesAndPatients();
+  }catch(err){ toast(err.message||'Failed to cancel.','error'); }
+}
+async function refreshQueuesAndPatients(){
+  try{
+    const res=await apiGet('/patients?perPage=500');
+    state.patients=res.items;
+  }catch(err){}
+  await fetchHomeQueue();
+}
+
+function genderLabel(g){ return g==='Male'?t('male'):g==='Female'?t('female'):'—'; }
+
+async function openPatientDetail(idx){
+  const p=state.patients[idx]; if(!p) return;
+  const rxHistoryRes=await Promise.allSettled([apiGet(`/patients/${p.id}/prescriptions`)]);
+  const rxHistory=rxHistoryRes[0].status==='fulfilled'?rxHistoryRes[0].value:[];
+  const fields=[
+    [t('patNo'),esc(p.patientNumber)],[t('fullName'),esc(p.Name)],
+    [t('age'),esc(p.age??'—')],[t('gender'),genderLabel(p.gender)],
+    [t('symptoms'),esc(p.symptoms||'—')],[t('diag'),esc(p.diagnosis||'—')],
+    [t('prevOps'),esc(p.previousOperations||'—')],[t('prevTreat'),esc(p.previousTreatment||'—')],
+    [t('famHist'),esc(p.familyHistory||'—')],
+    [t('mobileNum'),esc(p.mobileNumber||'—')],
+    [t('patientNotes'),esc(p.notes||'—')],
+  ];
+  const apptsHTML=(p.appointments||[]).length===0
+    ?`<p style="color:#94a3b8;font-size:0.88rem;margin-top:0.5rem">${t('noAppts')}</p>`
+    :p.appointments.map((a,i)=>{
+        
+        const filesHTML=(a.files&&a.files.length)
+          ?a.files.map(f=>`<a href="${esc(f.previewUrl)}" target="_blank" style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.76rem;background:#eff6ff;color:#1e40af;padding:0.22rem 0.5rem;border-radius:8px;text-decoration:none;">${icoFile()} ${esc(f.originalName)}</a>`).join('')
+          :`<span style="color:#94a3b8;font-size:0.78rem">${t('noFiles')}</span>`;
+        return `
+      <div class="appt-item" style="margin-top:0.7rem">
+        <div class="appt-date" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
+          <span>${icoCalendar()} ${esc(a.date||'—')}${a.time?` ${esc(a.time)}`:''} — ${visitTypeLabel(a.visitType)||t('apptSec')+' '+(i+1)}</span>
+          <span style="font-size:0.74rem;font-weight:700;color:${statusColor(a.status)}">${statusLabel(a.status)}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem;font-size:0.82rem;color:#334155;margin-top:0.4rem">
+          <div><strong>${t('diag')}:</strong> ${esc(a.diagnosis||'—')}</div>
+          <div><strong>${t('drugs')}:</strong> ${esc(a.drugs||'—')}</div>
+          <div><strong>${t('reqTests')}:</strong> ${esc(a.requiredTests||'—')}</div>
+          <div><strong>${t('testRes')}:</strong> ${esc(a.testsResult||'—')}</div>
+          <div><strong>${t('xrayReq')}:</strong> ${esc(a.medicalXRayRequired||'—')}</div>
+          <div><strong>${t('xrayRes')}:</strong> ${esc(a.medicalXRayResult||'—')}</div>
+        </div>
+        ${a.visitNotes?`<div style="margin-top:0.4rem;font-size:0.82rem;color:#334155"><strong>${t('visitNotes')}:</strong> ${esc(a.visitNotes)}</div>`:''}
+        <div style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center">${filesHTML}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.45rem;font-size:0.78rem">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">${t('testResultFile')}
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="uploadDetailFile(${idx},${i},'test_result',this)"/></label>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">${t('xrayResultFile')}
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="uploadDetailFile(${idx},${i},'xray_result',this)"/></label>
+        </div>
+      </div>`;
+      }).join('');
+
+  state.currentPatientRxHistory=rxHistory;
+  const rxHistHTML=rxHistory.length===0
+    ?`<p style="color:#94a3b8;font-size:0.88rem;margin-top:0.5rem">${t('noPrescriptions')}</p>`
+    :rxHistory.map((rx,ri)=>`
+      <div class="appt-item" style="margin-top:0.7rem">
+        <div class="appt-date" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
+          <span>${icoRx()} ${esc(rx.date||'—')}</span>
+          <span style="display:flex;gap:0.4rem">
+            <button class="btn btn-ghost btn-sm" onclick="reopenPrescriptionRecord(${idx},state.currentPatientRxHistory[${ri}])">${t('reopenRx')}</button>
+            <button class="btn btn-ghost btn-sm" onclick="printPrescriptionRecord(${idx},state.currentPatientRxHistory[${ri}])">${t('printOldRx')}</button>
+          </span>
+        </div>
+        <div style="font-size:0.82rem;color:#334155;margin-top:0.3rem"><strong>${t('diag')}:</strong> ${esc(rx.diagnosis||'—')}</div>
+        ${rx.drugs.length?`<div style="font-size:0.82rem;color:#334155;margin-top:0.2rem">${rx.drugs.map(d=>esc(d.name)+(d.dose?` (${esc(d.dose)})`:'')).join(', ')}</div>`:''}
+        ${rx.notes?`<div style="font-size:0.82rem;color:#334155;margin-top:0.2rem"><strong>${t('rxNotes')}:</strong> ${esc(rx.notes)}</div>`:''}
+      </div>`).join('');
+
+  document.getElementById('detail-modal').innerHTML=`
+    <button class="close-btn" onclick="closeDetail()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+    </button>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.3rem;flex-wrap:wrap">
+      <div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--bg-3),var(--bg-4));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--accent-deep)">${esc(p.Name.charAt(0))}</div>
+      <div style="flex:1">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--accent-deep)">${esc(p.Name)}</div>
+        <div style="font-size:0.8rem;color:#64748b"># ${esc(p.patientNumber)}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="startEditPatient(${idx})">${t('edit')}</button>
+    </div>
+    <div class="info-grid">${fields.map(([k,v])=>`<div class="info-item"><div class="info-key">${k}</div><div class="info-val">${v}</div></div>`).join('')}</div>
+    <div class="section-label" style="margin-top:1.5rem">${t('medHistExtra')}</div>
+    ${medHistExtraSummaryHTML(p)}
+    <div class="section-label" style="margin-top:1.5rem">${t('addAppointmentBtn')}</div>
+    ${detailApptFormHTML(p.id)}
+    <div class="section-label" style="margin-top:1.5rem">${t('apptSec')}</div>
+    ${apptsHTML}
+    <div class="section-label" style="margin-top:1.5rem">${t('rxHistory')}</div>
+    ${rxHistHTML}`;
+  document.getElementById('detail-overlay').style.display='flex';
+}
+
+function detailApptFormHTML(patientId){
+  const today=todayISO();
+  return `
+    <div class="glass-card" style="padding:1.2rem 1.4rem;margin-top:0.5rem">
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('apptDate')}</label>
+          <input class="form-input" type="date" id="da-date" value="${today}"/></div>
+        <div class="field-group"><label class="form-label">${t('visitType')}</label>
+          <select class="form-input" id="da-type">
+            ${VISIT_TYPES.map(vt=>`<option value="${vt}">${visitTypeLabelWithDuration(vt)}</option>`).join('')}
+          </select></div>
+        <div class="field-group"><label class="form-label">${t('apptDiag')}</label>
+          <input class="form-input" type="text" id="da-diag" autocomplete="off" data-ac-ctx='{"page":"detailDiag"}'
+            oninput="runAutocomplete(this,'diagnosis')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('apptDrugs')}</label>
+          <input class="form-input" type="text" id="da-drugs" autocomplete="off" data-ac-ctx='{"page":"detailDrugs"}'
+            oninput="runAutocomplete(this,'medication')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('apptTests')}</label>
+          <input class="form-input" type="text" id="da-tests"/></div>
+        <div class="field-group"><label class="form-label">${t('apptNotes')}</label>
+          <input class="form-input" type="text" id="da-notes"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:0.6rem">
+        <button class="btn btn-primary" onclick="saveDetailAppointment(${patientId})">${t('saveConsult')}</button>
+      </div>
+    </div>`;
+}
+
+async function saveDetailAppointment(patientId){
+  const payload={
+    date:document.getElementById('da-date').value,
+    visitType:document.getElementById('da-type').value,
+    diagnosis:document.getElementById('da-diag').value,
+    drugs:document.getElementById('da-drugs').value,
+    requiredTests:document.getElementById('da-tests').value,
+    visitNotes:document.getElementById('da-notes').value,
+    status:'completed',
+  };
+  try{
+    await apiPost(`/patients/${patientId}/appointments`,payload);
+    toast(t('consultSaved'),'success');
+    closeDetail();
+    await refreshQueuesAndPatients();
+    navigate('home');
+  }catch(err){ toast(err.message||t('fillFields'),'error'); }
+}
+function closeDetailBg(e){ if(e.target===document.getElementById('detail-overlay')) closeDetail(); }
+function closeDetail(){ document.getElementById('detail-overlay').style.display='none'; }
+
+async function uploadDetailFile(pIdx,aIdx,category,inputEl){
+  const file=inputEl.files[0]; if(!file) return;
+  if(!/\.(pdf|png|jpe?g)$/i.test(file.name)){ toast(t('invalidFileType'),'error'); inputEl.value=''; return; }
+  const p=state.patients[pIdx]; const appt=p&&p.appointments&&p.appointments[aIdx];
+  if(!appt) return;
+  try{
+    const rec=await uploadApptFile(p.id,appt.id,category,file);
+    appt.files=appt.files||[];
+    appt.files.push(rec);
+    toast(t('fileUploaded'),'success');
+    openPatientDetail(pIdx);
+  }catch(err){
+    toast(err.message||t('fileUploadFailed'),'error');
+  }
+}
+
+function medHistExtraSummaryHTML(p){
+  const m=p.medicalHistoryExtra||{};
+  const rows=[];
+  if(m.jointPain) rows.push(t('jointPain'));
+  if(m.jointSwelling) rows.push(t('jointSwelling'));
+  if(m.jointStiffness) rows.push(t('jointStiffness')+(m.jointStiffnessMinutes?` (${m.jointStiffnessMinutes} ${t('jointStiffnessMinutes')})`:''));
+  if(m.jointWarmthRedness) rows.push(t('jointWarmthRedness'));
+  if(m.limitedRangeOfMotion) rows.push(t('limitedRangeOfMotion'));
+  if(m.jointDeformity) rows.push(t('jointDeformity'));
+  if(m.jointInvolvementPattern==='symmetric') rows.push(`${t('jointInvolvementPattern')}: ${t('jointPatternSymmetric')}`);
+  if(m.jointInvolvementPattern==='asymmetric') rows.push(`${t('jointInvolvementPattern')}: ${t('jointPatternAsymmetric')}`);
+  if(m.fatigue) rows.push(t('fatigue'));
+  if(m.lowGradeFever) rows.push(t('lowGradeFever'));
+  if(m.weightLoss) rows.push(t('weightLoss'));
+  if(m.malaise) rows.push(t('malaise'));
+  if(m.nightSweats) rows.push(t('nightSweats'));
+  if(m.rash) rows.push(t('rash'));
+  if(m.nodules) rows.push(t('nodules'));
+  if(m.raynauds) rows.push(t('raynauds'));
+  if(m.oralUlcers) rows.push(t('oralUlcers'));
+  if(m.nailChanges) rows.push(t('nailChanges'));
+  if(m.hairLoss) rows.push(t('hairLoss'));
+  if(m.muscleWeakness) rows.push(t('muscleWeakness'));
+  if(m.musclePain) rows.push(t('musclePain'));
+  if(m.inflammatoryBackPain) rows.push(t('inflammatoryBackPain'));
+  if(m.enthesitis) rows.push(t('enthesitis'));
+  if(m.dactylitis) rows.push(t('dactylitis'));
+  if(m.dryEyes) rows.push(t('dryEyes'));
+  if(m.eyeRednessPain) rows.push(t('eyeRednessPain'));
+  if(m.photophobia) rows.push(t('photophobia'));
+  if(m.dryMouth) rows.push(t('dryMouth'));
+  if(m.pleuriticChestPain) rows.push(t('pleuriticChestPain'));
+  if(m.shortnessOfBreath) rows.push(t('shortnessOfBreath'));
+  if(m.dysphagia) rows.push(t('dysphagia'));
+  if(m.siccaSymptoms) rows.push(t('siccaSymptoms'));
+  if(m.peripheralNeuropathy) rows.push(t('peripheralNeuropathy'));
+  if(m.reducedGripStrength) rows.push(t('reducedGripStrength'));
+  if(m.difficultyDailyActivities) rows.push(t('difficultyDailyActivities'));
+  if(m.sleepDisturbance) rows.push(t('sleepDisturbance'));
+  if(rows.length===0) return `<p style="color:#94a3b8;font-size:0.88rem;margin-top:0.5rem">—</p>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${rows.map(r=>`<span style="font-size:0.78rem;background:#eff6ff;color:#1e40af;padding:0.22rem 0.6rem;border-radius:8px">${esc(r)}</span>`).join('')}</div>`;
+}
+function mhxChecked(key){ return state.medicalHistoryExtra && state.medicalHistoryExtra[key] ? 'checked' : ''; }
+function mhxRadioChecked(key,val){ return (state.medicalHistoryExtra && state.medicalHistoryExtra[key]===val) ? 'checked' : ''; }
+function updateMedHistExtra(key,value){ state.medicalHistoryExtra[key]=value; }
+function mhxCheckboxRow(key,labelKey){
+  return `<label class="form-label" style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">
+    <input type="checkbox" ${mhxChecked(key)} onchange="updateMedHistExtra('${key}',this.checked)"/> ${t(labelKey)}
+  </label>`;
+}
+function renderMedHistExtraSection(){
+  return `
+        <div class="section-label">${t('medHistExtra')}</div>
+        <div class="glass-card" style="padding:1.2rem 1.4rem;margin-bottom:1.2rem">
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxJointSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('jointPain','jointPain')}
+              ${mhxCheckboxRow('jointSwelling','jointSwelling')}
+              ${mhxCheckboxRow('jointStiffness','jointStiffness')}
+              ${mhxCheckboxRow('jointWarmthRedness','jointWarmthRedness')}
+              ${mhxCheckboxRow('limitedRangeOfMotion','limitedRangeOfMotion')}
+              ${mhxCheckboxRow('jointDeformity','jointDeformity')}
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-top:0.6rem">
+              <span style="font-size:0.85rem;color:#64748b">${t('jointStiffnessMinutes')}:</span>
+              <input type="number" min="0" class="form-input" style="width:90px;padding:0.35rem 0.5rem" value="${esc(state.medicalHistoryExtra.jointStiffnessMinutes||'')}" onchange="updateMedHistExtra('jointStiffnessMinutes',this.value)"/>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:1.2rem;margin-top:0.6rem">
+              <span style="font-size:0.85rem;color:#64748b">${t('jointInvolvementPattern')}:</span>
+              <label class="form-label" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">
+                <input type="radio" name="mhx-jointInvolvementPattern" ${mhxRadioChecked('jointInvolvementPattern','')} onchange="updateMedHistExtra('jointInvolvementPattern','')"/> ${t('jointPatternNone')}</label>
+              <label class="form-label" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">
+                <input type="radio" name="mhx-jointInvolvementPattern" ${mhxRadioChecked('jointInvolvementPattern','symmetric')} onchange="updateMedHistExtra('jointInvolvementPattern','symmetric')"/> ${t('jointPatternSymmetric')}</label>
+              <label class="form-label" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">
+                <input type="radio" name="mhx-jointInvolvementPattern" ${mhxRadioChecked('jointInvolvementPattern','asymmetric')} onchange="updateMedHistExtra('jointInvolvementPattern','asymmetric')"/> ${t('jointPatternAsymmetric')}</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxSystemicSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('fatigue','fatigue')}
+              ${mhxCheckboxRow('lowGradeFever','lowGradeFever')}
+              ${mhxCheckboxRow('weightLoss','weightLoss')}
+              ${mhxCheckboxRow('malaise','malaise')}
+              ${mhxCheckboxRow('nightSweats','nightSweats')}
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxSkinSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('rash','rash')}
+              ${mhxCheckboxRow('nodules','nodules')}
+              ${mhxCheckboxRow('raynauds','raynauds')}
+              ${mhxCheckboxRow('oralUlcers','oralUlcers')}
+              ${mhxCheckboxRow('nailChanges','nailChanges')}
+              ${mhxCheckboxRow('hairLoss','hairLoss')}
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxMskSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('muscleWeakness','muscleWeakness')}
+              ${mhxCheckboxRow('musclePain','musclePain')}
+              ${mhxCheckboxRow('inflammatoryBackPain','inflammatoryBackPain')}
+              ${mhxCheckboxRow('enthesitis','enthesitis')}
+              ${mhxCheckboxRow('dactylitis','dactylitis')}
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxEyeSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('dryEyes','dryEyes')}
+              ${mhxCheckboxRow('eyeRednessPain','eyeRednessPain')}
+              ${mhxCheckboxRow('photophobia','photophobia')}
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0.9rem">
+            <label class="form-label">${t('mhxOtherOrganSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('dryMouth','dryMouth')}
+              ${mhxCheckboxRow('pleuriticChestPain','pleuriticChestPain')}
+              ${mhxCheckboxRow('shortnessOfBreath','shortnessOfBreath')}
+              ${mhxCheckboxRow('dysphagia','dysphagia')}
+              ${mhxCheckboxRow('siccaSymptoms','siccaSymptoms')}
+              ${mhxCheckboxRow('peripheralNeuropathy','peripheralNeuropathy')}
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="form-label">${t('mhxConstSec')}</label>
+            <div style="display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:0.4rem">
+              ${mhxCheckboxRow('reducedGripStrength','reducedGripStrength')}
+              ${mhxCheckboxRow('difficultyDailyActivities','difficultyDailyActivities')}
+              ${mhxCheckboxRow('sleepDisturbance','sleepDisturbance')}
+            </div>
+          </div>
+        </div>`;
+}
+function renderAddPatient(){
+  
+  const editingPt = state.editingPatientId!=null
+    ? state.patients.find(p=>p.id===state.editingPatientId) : null;
+  const apptsHTML=state.appointments.map((a,i)=>`
+    <div class="appt-block">
+      <div class="appt-header">
+        <div class="appt-title">${icoCalendar()} ${t('apptSec')} ${i+1}</div>
+        <div style="display:flex;gap:0.4rem">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="toggleAppt(${i})">${a.isEditing?t('save'):t('edit')}</button>
+          <button class="btn btn-danger btn-sm" type="button" onclick="removeAppt(${i})">${t('del')}</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('apptDate')}</label>
+          <input class="form-input" type="date" ${!a.isEditing?'disabled':''} value="${esc(a.date||'')}" onchange="updateAppt(${i},'date',this.value)"/></div>
+        <div class="field-group"><label class="form-label">${t('diag')}</label>
+          <input class="form-input" type="text" autocomplete="off" data-ac-ctx='{"page":"appt","idx":${i}}'
+            ${!a.isEditing?'disabled':''} value="${esc(a.diagnosis||'')}" placeholder="${t('diag')}"
+            oninput="updateAppt(${i},'diagnosis',this.value);runAutocomplete(this,'diagnosis')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('drugs')}</label>
+          <input class="form-input" type="text" autocomplete="off" data-ac-ctx='{"page":"appt","idx":${i}}'
+            ${!a.isEditing?'disabled':''} value="${esc(a.drugs||'')}" placeholder="${t('drugs')}"
+            oninput="updateAppt(${i},'drugs',this.value);runAutocomplete(this,'medication')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('reqTests')}</label>
+          <input class="form-input" type="text" autocomplete="off" data-ac-ctx='{"page":"appt","idx":${i}}'
+            ${!a.isEditing?'disabled':''} value="${esc(a.requiredTests||'')}"
+            oninput="updateAppt(${i},'requiredTests',this.value);runAutocomplete(this,'labTest')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('testRes')}</label>
+          <input class="form-input" type="text" ${!a.isEditing?'disabled':''} value="${esc(a.testsResult||'')}" oninput="updateAppt(${i},'testsResult',this.value)"/></div>
+        <div class="field-group"><label class="form-label">${t('xrayReq')}</label>
+          <input class="form-input" type="text" autocomplete="off" data-ac-ctx='{"page":"appt","idx":${i}}'
+            ${!a.isEditing?'disabled':''} value="${esc(a.medicalXRayRequired||'')}"
+            oninput="updateAppt(${i},'medicalXRayRequired',this.value);runAutocomplete(this,'radiology')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+        <div class="field-group"><label class="form-label">${t('xrayRes')}</label>
+          <input class="form-input" type="text" ${!a.isEditing?'disabled':''} value="${esc(a.medicalXRayResult||'')}" oninput="updateAppt(${i},'medicalXRayResult',this.value)"/></div>
+        
+        <div class="field-group"><label class="form-label">${t('testResultFile')}</label>
+          <input class="form-input" type="file" accept=".pdf,.png,.jpg,.jpeg" ${!a.isEditing?'disabled':''} onchange="setApptFile(${i},'testsResultFile',this)"/>
+          ${a.testsResultFile?`<div style="font-size:0.78rem;color:#16a34a;margin-top:0.25rem">${icoFile()} ${esc(a.testsResultFile.name)}</div>`:''}</div>
+        <div class="field-group"><label class="form-label">${t('xrayResultFile')}</label>
+          <input class="form-input" type="file" accept=".pdf,.png,.jpg,.jpeg" ${!a.isEditing?'disabled':''} onchange="setApptFile(${i},'medicalXRayResultFile',this)"/>
+          ${a.medicalXRayResultFile?`<div style="font-size:0.78rem;color:#16a34a;margin-top:0.25rem">${icoFile()} ${esc(a.medicalXRayResultFile.name)}</div>`:''}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('page-addPatient').innerHTML=`
+  <div class="page">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.3rem">
+      <div class="page-heading" style="margin-bottom:0">${editingPt?t('editPatient'):t('addPatient')}</div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="printPatientReport()">${icoPrint()} ${t('printPatientReport')}</button>
+    </div>
+    <p class="page-sub">${t('patInfo')}</p>
+    <div class="glass-card" style="padding:2rem">
+      <form id="patientForm" onsubmit="savePatient(event)">
+        <div class="section-label" style="margin-top:0">${t('patInfo')}</div>
+        <div class="form-grid">
+          <div class="field-group"><label class="form-label">${t('patNo')} *</label>
+            <input class="form-input" type="text" name="patientNumber" required id="ap-patient-number"
+              value="${esc(editingPt?editingPt.patientNumber:state.nextPatientNumber||'')}" readonly/></div>
+          <div class="field-group"><label class="form-label">${t('fullName')} *</label>
+            <input class="form-input" type="text" name="name" required value="${esc(editingPt?editingPt.Name:'')}"/></div>
+          <div class="field-group"><label class="form-label">${t('age')} *</label>
+            <input class="form-input" type="number" name="age" required min="0" max="150" value="${esc(editingPt?editingPt.age:'')}"/></div>
+          <div class="field-group"><label class="form-label">${t('gender')} *</label>
+            <select class="form-input" name="gender" required>
+              <option value="Male" ${editingPt&&editingPt.gender==='Male'?'selected':''}>${t('male')}</option>
+              <option value="Female" ${editingPt&&editingPt.gender==='Female'?'selected':''}>${t('female')}</option>
+            </select></div>
+          
+          <div class="field-group"><label class="form-label">${t('mobileNum')} *</label>
+            <input class="form-input" type="tel" name="mobileNumber" required placeholder="01xxxxxxxxx" value="${esc(editingPt?editingPt.mobileNumber:'')}"/></div>
+        </div>
+        <div class="section-label">${t('medHist')}</div>
+        <div class="form-grid">
+          <div class="field-group"><label class="form-label">${t('diag')}</label>
+            <input class="form-input" type="text" name="diagnosis" autocomplete="off" value="${esc(editingPt?editingPt.diagnosis:'')}"
+              oninput="runAutocomplete(this,'diagnosis')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/></div>
+          <div class="field-group"><label class="form-label">${t('symptoms')}</label>
+            <input class="form-input" type="text" name="symptoms" value="${esc(editingPt?editingPt.symptoms:'')}"/></div>
+          <div class="field-group"><label class="form-label">${t('prevOps')}</label>
+            <input class="form-input" type="text" name="previousOperations" value="${esc(editingPt?editingPt.previousOperations:'')}"/></div>
+          <div class="field-group"><label class="form-label">${t('prevTreat')}</label>
+            <input class="form-input" type="text" name="previousTreatment" value="${esc(editingPt?editingPt.previousTreatment:'')}"/></div>
+          <div class="field-group"><label class="form-label">${t('famHist')}</label>
+            <input class="form-input" type="text" name="familyHistory" value="${esc(editingPt?editingPt.familyHistory:'')}"/></div>
+        </div>
+        ${renderMedHistExtraSection()}
+        <div class="field-group"><label class="form-label">${t('patientNotes')}</label>
+          <textarea class="form-input" name="notes" rows="2">${esc(editingPt?editingPt.notes:'')}</textarea></div>
+        ${editingPt?'':`
+        <div class="section-label">
+          ${t('apptSec')}
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addAppt()"
+            style="text-transform:none;letter-spacing:0;font-size:0.78rem">${t('addAppt')}</button>
+        </div>
+        <div id="appointmentsContainer">
+          ${state.appointments.length===0?`<p style="color:#94a3b8;font-size:0.85rem">${t('noAppts')}</p>`:apptsHTML}
+        </div>`}
+        <div style="display:flex;justify-content:flex-end;gap:0.6rem;margin-top:1.8rem">
+          <button type="button" class="btn btn-ghost" onclick="cancelEditPatient()">${t('cancel')}</button>
+          <button type="submit" class="btn btn-primary">${editingPt?t('save'):t('savePatient')}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+
+  if(!editingPt && !state.nextPatientNumber) fetchNextPatientNumber();
+}
+
+function printPatientReport(){
+  const form=document.getElementById('patientForm');
+  const fd=form?new FormData(form):new FormData();
+  const get=name=>(fd.get(name)||'').toString().trim();
+  const m=state.medicalHistoryExtra||{};
+  const row=(labelKey,val)=>val?`<div class="pr-row"><span class="pr-label">${esc(t(labelKey))}</span><span class="pr-val">${esc(val)}</span></div>`:'';
+  const infoRows=[
+    row('patNo',get('patientNumber')), row('fullName',get('name')), row('age',get('age')),
+    row('gender',get('gender')==='Female'?t('female'):get('gender')==='Male'?t('male'):''),
+    row('mobileNum',get('mobileNumber')), row('diag',get('diagnosis')), row('symptoms',get('symptoms')),
+    row('prevOps',get('previousOperations')), row('prevTreat',get('previousTreatment')),
+    row('famHist',get('familyHistory')), row('patientNotes',get('notes')),
+  ].join('');
+  const mhxItems=[
+    'jointPain','jointSwelling','jointStiffness','jointWarmthRedness','limitedRangeOfMotion','jointDeformity',
+    'fatigue','lowGradeFever','weightLoss','malaise','nightSweats',
+    'rash','nodules','raynauds','oralUlcers','nailChanges','hairLoss',
+    'muscleWeakness','musclePain','inflammatoryBackPain','enthesitis','dactylitis',
+    'dryEyes','eyeRednessPain','photophobia',
+    'dryMouth','pleuriticChestPain','shortnessOfBreath','dysphagia','siccaSymptoms','peripheralNeuropathy',
+    'reducedGripStrength','difficultyDailyActivities','sleepDisturbance',
+  ];
+  const mhxRows=mhxItems.filter(k=>m[k]).map(k=>{
+    let label=t(k);
+    if(k==='jointStiffness'&&m.jointStiffnessMinutes) label+=` (${esc(m.jointStiffnessMinutes)} ${t('jointStiffnessMinutes')})`;
+    return `<span class="pr-pill">${esc(label)}</span>`;
+  });
+  if(m.jointInvolvementPattern==='symmetric') mhxRows.push(`<span class="pr-pill">${esc(t('jointInvolvementPattern'))}: ${esc(t('jointPatternSymmetric'))}</span>`);
+  if(m.jointInvolvementPattern==='asymmetric') mhxRows.push(`<span class="pr-pill">${esc(t('jointInvolvementPattern'))}: ${esc(t('jointPatternAsymmetric'))}</span>`);
+  const mhxHTML=mhxRows.length?`<div class="pr-pills">${mhxRows.join('')}</div>`:`<p class="pr-empty">—</p>`;
+  const content=`
+    <div class="pr-page">
+      <div class="pr-header">
+        <div>
+          <div class="pr-dr">${esc(t('doctorName'))}</div>
+          <div class="pr-spec">${esc(t('specialty'))}</div>
+        </div>
+        <div class="pr-title">${esc(t('patientReportTitle'))}</div>
+      </div>
+      <div class="pr-date">${new Date().toLocaleDateString()}</div>
+      <div class="pr-section-title">${esc(t('patInfo'))}</div>
+      <div class="pr-grid">${infoRows}</div>
+      <div class="pr-section-title">${esc(t('medHistExtra'))}</div>
+      ${mhxHTML}
+    </div>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="${currentLang==='ar'?'ar':'en'}" dir="${currentLang==='ar'?'rtl':'ltr'}"><head><meta charset="UTF-8"/><title>${esc(t('patientReportTitle'))}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:A4;margin:14mm;}
+  body{font-family:'Cairo',sans-serif;background:#fff;color:#1e1330;}
+  .pr-page{max-width:180mm;margin:0 auto;}
+  .pr-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2c1a2e;padding-bottom:8px;margin-bottom:4px;}
+  .pr-dr{font-weight:700;font-size:1.3rem;color:#2c1a2e;}
+  .pr-spec{font-size:0.85rem;color:#64748b;}
+  .pr-title{font-weight:700;font-size:1.1rem;color:#2c1a2e;}
+  .pr-date{font-size:0.8rem;color:#64748b;text-align:end;margin-bottom:14px;}
+  .pr-section-title{font-weight:700;font-size:0.95rem;color:#2c1a2e;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin:14px 0 8px;}
+  .pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;}
+  .pr-row{display:flex;gap:6px;font-size:0.88rem;padding:3px 0;}
+  .pr-label{font-weight:700;color:#475569;min-width:110px;}
+  .pr-val{color:#1e1330;}
+  .pr-pills{display:flex;flex-wrap:wrap;gap:6px;}
+  .pr-pill{font-size:0.8rem;background:#eff6ff;color:#1e40af;padding:4px 10px;border-radius:8px;}
+  .pr-empty{color:#94a3b8;font-size:0.85rem;}
+  @media print{ body{padding:0;} }
+  </style></head><body>${content}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
+}
+async function fetchNextPatientNumber(){
+  try{
+    const {patientNumber}=await apiGet('/patients/next-number');
+    state.nextPatientNumber=patientNumber;
+    const field=document.getElementById('ap-patient-number');
+    if(field) field.value=patientNumber;
+  }catch(err){  }
+}
+
+function startEditPatient(idx){
+  const p=state.patients[idx]; if(!p) return;
+  state.editingPatientId=p.id;
+  state.medicalHistoryExtra={...(p.medicalHistoryExtra||{})};
+  closeDetail();
+  navigate('addPatient');
+}
+function cancelEditPatient(){
+  state.editingPatientId=null;
+  state.nextPatientNumber=null;
+  state.medicalHistoryExtra={};
+  navigate('home');
+}
+function cancelEditPatient_silent(){ state.editingPatientId=null; state.nextPatientNumber=null; state.medicalHistoryExtra={}; }
+
+async function savePatient(event,forceCreateDuplicate){
+  event.preventDefault();
+  const formData=new FormData(event.target);
+  const payload={
+    Name:formData.get('name'), patientNumber:formData.get('patientNumber'),
+    age:formData.get('age'), gender:formData.get('gender'),
+    previousOperations:formData.get('previousOperations'),
+    previousTreatment:formData.get('previousTreatment'),
+    diagnosis:formData.get('diagnosis'), symptoms:formData.get('symptoms'),
+    familyHistory:formData.get('familyHistory'),
+    
+    mobileNumber:formData.get('mobileNumber'),
+    notes:formData.get('notes'),
+    
+    medicalHistoryExtra:state.medicalHistoryExtra,
+    
+    appointments:state.appointments.map(({isEditing,testsResultFile,medicalXRayResultFile,...a})=>a),
+  };
+  
+  if(state.editingPatientId!=null){
+    try{
+      delete payload.patientNumber; delete payload.appointments;
+      const updated=await apiPut(`/patients/${state.editingPatientId}`,payload);
+      const idx=state.patients.findIndex(p=>p.id===state.editingPatientId);
+      if(idx!==-1) state.patients[idx]={...state.patients[idx],...updated};
+      state.editingPatientId=null;
+      state.medicalHistoryExtra={};
+      toast(t('patientUpdated'),'success');
+      navigate('home');
+    }catch(err){
+      toast(err.message||t('fillFields'),'error');
+    }
+    return;
+  }
+  if(forceCreateDuplicate) payload.forceCreateDuplicate=true;
+  
+  delete payload.patientNumber;
+  try{
+    const pendingAppts=state.appointments;
+    const patient=await apiPost('/patients',payload);
+    state.patients.unshift(patient);
+    await uploadPendingApptFiles(patient,pendingAppts);
+    state.appointments=[];
+    state.nextPatientNumber=null;
+    state.medicalHistoryExtra={};
+    event.target.reset();
+    toast(t('patSaved'),'success');
+    navigate('home');
+  }catch(err){
+    
+    if(err.status===409){
+      const existing=err.data.existingPatient;
+      const proceed=await showConfirm(t('dupTitle'),`${t('dupMsg')} ${existing.Name} (#${existing.patientNumber})`,t('savePatient'));
+      if(proceed) return savePatient(event,true);
+    }else{
+      toast(err.message||t('fillFields'),'error');
+    }
+  }
+}
+function addAppt(){
+  state.appointments.push({date:'',diagnosis:'',drugs:'',requiredTests:'',testsResult:'',medicalXRayRequired:'',medicalXRayResult:'',isEditing:true});
+  renderAddPatient();
+  document.getElementById('page-addPatient').style.display='';
+}
+function removeAppt(i){ state.appointments.splice(i,1); renderAddPatient(); document.getElementById('page-addPatient').style.display=''; }
+function toggleAppt(i){ state.appointments[i].isEditing=!state.appointments[i].isEditing; renderAddPatient(); document.getElementById('page-addPatient').style.display=''; }
+function updateAppt(i,k,v){ state.appointments[i][k]=v; }
+
+function setApptFile(i,key,inputEl){
+  const file=inputEl.files[0];
+  if(file && !/\.(pdf|png|jpe?g)$/i.test(file.name)){
+    toast(t('invalidFileType'),'error');
+    inputEl.value='';
+    return;
+  }
+  state.appointments[i][key]=file||null;
+  renderAddPatient();
+  document.getElementById('page-addPatient').style.display='';
+}
+async function uploadPendingApptFiles(patient,pendingAppts){
+  const jobs=[];
+  pendingAppts.forEach((a,i)=>{
+    const apptId=patient.appointments&&patient.appointments[i]&&patient.appointments[i].id;
+    if(!apptId) return;
+    if(a.testsResultFile) jobs.push(uploadApptFile(patient.id,apptId,'test_result',a.testsResultFile)
+      .then(f=>patient.appointments[i].files.push(f)));
+    if(a.medicalXRayResultFile) jobs.push(uploadApptFile(patient.id,apptId,'xray_result',a.medicalXRayResultFile)
+      .then(f=>patient.appointments[i].files.push(f)));
+  });
+  if(!jobs.length) return;
+  const results=await Promise.allSettled(jobs);
+  if(results.some(r=>r.status==='rejected')) toast(t('fileUploadFailed'),'error');
+}
+
+function renderPrescription(){
+  const rxPt=state.rxPatient!=null?state.patients[state.rxPatient]:null;
+  const today=new Date().toISOString().split('T')[0];
+
+  const drugsRows=state.rxDrugs.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.8rem">
+      <div style="flex:2">
+        <input style="width:100%;padding:0.7rem 0.9rem;border:1px solid #cbd5e1;border-radius:9px;font-size:0.95rem;font-family:inherit;outline:none;"
+          type="text" dir="auto" autocomplete="off" data-ac-ctx='{"page":"rxDrug","idx":${i}}'
+          value="${esc(d.name)}" placeholder="${t('drugName')}"
+          oninput="state.rxDrugs[${i}].name=this.value; refreshRxPreview();runAutocomplete(this,'medication')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/>
+      </div>
+      <div style="flex:3">
+        <input style="width:100%;padding:0.7rem 0.9rem;border:1px solid #cbd5e1;border-radius:9px;font-size:0.95rem;font-family:inherit;outline:none;"
+          type="text" dir="auto" value="${esc(d.dose)}" placeholder="${t('drugDose')}"
+          oninput="state.rxDrugs[${i}].dose=this.value; refreshRxPreview()"/>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeRxDrug(${i})">✕</button>
+    </div>`).join('');
+
+  document.getElementById('page-prescription').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('rxTitle')}</div>
+    <p class="page-sub">${t('rxSub')}</p>
+    
+    <div class="glass-card" style="padding:.9rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span style="font-weight:700;font-size:.78rem;color:var(--accent-deep);text-transform:uppercase;letter-spacing:.04em">${t('rxPrintModeLabel')}</span>
+      <div style="display:inline-flex;border-radius:10px;overflow:hidden;border:1px solid rgba(107,47,109,.3)">
+        <button type="button" onclick="setRxPrintMode('full')" style="padding:.45rem 1rem;font-size:.8rem;font-weight:600;border:none;cursor:pointer;${state.rxPrintMode==='full'?'background:var(--accent);color:#fff':'background:transparent;color:var(--accent-deep)'}">${t('rxModeFull')}</button>
+        <button type="button" onclick="setRxPrintMode('overlay')" style="padding:.45rem 1rem;font-size:.8rem;font-weight:600;border:none;cursor:pointer;${state.rxPrintMode==='overlay'?'background:var(--accent);color:#fff':'background:transparent;color:var(--accent-deep)'}">${t('rxModeOverlay')}</button>
+      </div>
+      ${state.rxPrintMode==='overlay'?`<span style="font-size:.74rem;color:#94a3b8;flex:1;min-width:200px">${t('rxModeOverlayHint')}</span>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:380px 1fr;gap:1.4rem;align-items:start">
+      <div class="glass-card" style="padding:1.8rem;font-size:1rem">
+        <div style="font-weight:700;font-size:0.78rem;color:var(--accent-deep);margin-bottom:0.9rem;text-transform:uppercase;letter-spacing:0.04em">${t('selectPt')}</div>
+        <div class="field-group" style="position:relative">
+          <input class="form-input" type="text" id="rx-pt-search" autocomplete="off"
+            placeholder="${t('searchPtPh')}"
+            value="${rxPt?esc(rxPt.Name+' — #'+rxPt.patientNumber):esc(state.rxPatientQuery)}"
+            oninput="onRxPatientSearch(this.value)" onfocus="renderRxPtDropdown(this.value)"
+            onkeydown="handleRxPtKeydown(event)" onblur="setTimeout(closeRxPtDropdown,150)"/>
+          <div id="rx-pt-dropdown" class="ac-dropdown" style="position:absolute;left:0;right:0;top:100%;margin-top:.3rem;width:auto;"></div>
+        </div>
+        <div class="field-group">
+          <label class="form-label">${t('rxDate')}</label>
+          <input class="form-input" type="date" id="rx-date" value="${state.rxDate||today}" onchange="state.rxDate=this.value; refreshRxPreview()"/>
+        </div>
+        <div class="field-group">
+          <label class="form-label">${t('rxDiag')}</label>
+          <input class="form-input" type="text" id="rx-diag" autocomplete="off" data-ac-ctx='{"page":"rxDiag"}'
+            value="${esc(state.rxDiagnosis)}"
+            placeholder="${t('rxDiag')}…" oninput="state.rxDiagnosis=this.value; refreshRxPreview();runAutocomplete(this,'diagnosis')" onkeydown="handleAcKeydown(event,this)" onblur="hideAutocomplete()"/>
+        </div>
+        <div class="field-group">
+          <label class="form-label">${t('rxNotes')}</label>
+          <textarea class="form-input" id="rx-notes" rows="3" style="min-height:90px;font-size:0.95rem"
+            oninput="state.rxNotes=this.value; refreshRxPreview()">${esc(state.rxNotes)}</textarea>
+        </div>
+        <div style="font-weight:700;font-size:0.78rem;color:var(--accent-deep);margin:1.1rem 0 0.6rem;text-transform:uppercase;letter-spacing:0.04em">${t('drugs')}</div>
+        <div id="rx-drugs-list">${drugsRows}</div>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-bottom:1rem;font-size:0.8rem" onclick="addRxDrug()">${t('addDrug')}</button>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="printPrescription()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z"/></svg>
+            ${t('printRx')}
+          </button>
+          <button class="btn btn-ghost" onclick="clearRx()">${t('clearRx')}</button>
+        </div>
+      </div>
+      <div>
+        <div id="rx-preview-wrap">${buildRxPreview(rxPt)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildRxPreview(pt,override){
+  const ov=override||{};
+  const date=ov.date!==undefined?ov.date:(document.getElementById('rx-date')?document.getElementById('rx-date').value:new Date().toISOString().split('T')[0]);
+  const diagnosis=ov.diagnosis!==undefined?ov.diagnosis:state.rxDiagnosis;
+  const notes=ov.notes!==undefined?ov.notes:state.rxNotes;
+  const drugs=ov.drugs!==undefined?ov.drugs:state.rxDrugs;
+  const drugsHTML=drugs.filter(d=>d.name.trim()).map((d,i)=>`
+    <div class="rx-drug-line">
+      <div class="rx-drug-num">${i+1}.</div>
+      <div>
+        <div class="rx-drug-name" dir="auto">${esc(d.name)}</div>
+        ${d.dose?`<div class="rx-drug-dose" dir="auto">${esc(d.dose)}</div>`:''}
+      </div>
+    </div>`).join('');
+
+  
+  const overlayClass=state.rxPrintMode==='overlay'?' rx-overlay-mode':'';
+  return `<div id="rx-preview" class="${overlayClass.trim()}">
+    <div class="header">
+      <div class="en-block">
+        <div class="dr">DR</div>
+        <div class="name">MAHMOUD RISHA</div>
+        <div class="sub1">RHEUMATOLOGY CONSULTANT, MD</div>
+        <div class="sub2">LECTURER OF RHEUMATOLOGY &amp; IMMUNOLOGY<br/>Al Azhar University,Cairo</div>
+      </div>
+      <div class="logo-badge"><img src="assets/rx-logo.png" alt="Dr Risha Rheumatology Clinic"/></div>
+      <div class="ar-block">
+        <div class="doctor">دكتور</div>
+        <div class="name">محمـود ريشـة</div>
+        <div class="sub">
+          استشاري الروماتيزم والمفاصل والعمود الفقري<br/>
+          دكتوراه و مدرس الروماتيزم والمناعة<br/>
+          كلية الطب و مستشفيات جامعة الأزهر بالقاهرة<br/>
+          عضو الجمعية المصرية والأوروبية للروماتيزم
+        </div>
+      </div>
+    </div>
+
+    <div class="patientbar" dir="rtl">
+      <div class="pb-row">
+        <div class="pb-field grow"><label>الإسم :</label><div class="pb-dots" dir="auto">${pt?esc(pt.Name):''}</div></div>
+        <div class="pb-field short"><label>السن :</label><div class="pb-dots">${pt?esc(pt.age||''):''}</div></div>
+        <div class="pb-field short"><label>التاريخ :</label><div class="pb-dots">${esc(date)}</div></div>
+      </div>
+      <div class="pb-row">
+        <div class="pb-field grow"><label>التشخيص :</label><div class="pb-dots" dir="auto">${esc(diagnosis||'')}</div></div>
+        <div class="pb-field short"><label>رقم الملف :</label><div class="pb-dots">${pt?esc(pt.patientNumber||''):''}</div></div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="rx-mark"><img src="assets/rx-symbol.png" alt=""/></div>
+      <div class="watermark"><img src="assets/rx-watermark.png" alt=""/></div>
+      ${drugsHTML||`<p style="color:#94a3b8;font-size:2.8mm;font-style:italic;position:relative;z-index:1">${t('addDrugPh')}</p>`}
+      ${notes?`<div class="rx-notes-box"><strong style="color:#2c1a2e">${t('rxNotes')}:</strong> ${esc(notes)}</div>`:''}
+      <div class="signature"><img src="assets/rx-signature.png" alt="Doctor's signature"/></div>
+      <div class="qr-badge"><img src="assets/rx-qr.png" alt="Follow us on Facebook"/></div>
+    </div>
+
+    <div class="footer-gold"></div>
+    <div class="footer">
+      <div class="pills">
+        <div class="pill date">٢٠&nbsp;&nbsp;/&nbsp;&nbsp;/</div>
+        <div class="pill info">
+          <span>الكشف والاستشارة بحجز مسبق</span>
+          <div class="divider"></div>
+          <span>الاستشارة خلال أسبوعين</span>
+        </div>
+      </div>
+      <div class="contact-row">
+        <div class="icon-badge wa">${icoWhatsapp2()}</div>
+        <div class="icon-badge ph">${icoPhone2()}</div>
+        <div class="phone-num">0100&nbsp;<span class="accent">35&nbsp;38</span>&nbsp;198</div>
+        <div class="address-txt">القاهرة ـ جسر السويس – محطة مترو النزهة – أمام سنترال النزهة أعلي وان جيم</div>
+        <div class="icon-badge pin">${icoPin2()}</div>
+      </div>
+      <div class="contact-row">
+        <div class="icon-badge ph">${icoPhone2()}</div>
+        <div class="phone-num">0122&nbsp;<span class="accent">80&nbsp;65</span>&nbsp;945</div>
+        <div class="address-txt">الرحاب – المركز الطبي الأول –عيادات الصفوة</div>
+        <div class="icon-badge pin">${icoPin2()}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onRxPatientSearch(value){
+  state.rxPatientQuery=value;
+  state.rxPatient=null;
+  renderRxPtDropdown(value);
+}
+function highlightMatch(text,q){
+  const s=esc(text||'');
+  if(!q) return s;
+  const idx=s.toLowerCase().indexOf(q.toLowerCase());
+  if(idx===-1) return s;
+  return s.slice(0,idx)+'<mark style="background:#fde68a;color:inherit;border-radius:2px">'+s.slice(idx,idx+q.length)+'</mark>'+s.slice(idx+q.length);
+}
+function getRecentPatientIds(){
+  try{ return JSON.parse(localStorage.getItem('rxRecentPatients')||'[]'); }catch(e){ return []; }
+}
+function addRecentPatientId(id){
+  let ids=getRecentPatientIds().filter(x=>x!==id);
+  ids.unshift(id);
+  localStorage.setItem('rxRecentPatients',JSON.stringify(ids.slice(0,5)));
+}
+function renderRxPtDropdown(query){
+  const dd=document.getElementById('rx-pt-dropdown');
+  if(!dd) return;
+  const q=(query||'').toLowerCase().trim();
+  let list, sectionLabel=null;
+  if(!q){
+    const recentIds=getRecentPatientIds();
+    list=recentIds.map(id=>state.patients.findIndex(p=>p.id===id)).filter(idx=>idx>=0).map(idx=>({idx,p:state.patients[idx]}));
+    if(list.length) sectionLabel=t('recentPatients');
+  }else{
+    list=state.patients.map((p,idx)=>({idx,p})).filter(({p})=>
+      p.Name.toLowerCase().includes(q)||String(p.mobileNumber||'').includes(q)||String(p.patientNumber||'').toLowerCase().includes(q)
+    ).slice(0,20);
+  }
+  if(!list.length){
+    dd.innerHTML=`<div class="ac-item" style="cursor:default;color:#94a3b8;font-style:italic">${t('noPtMatch')}</div>`;
+    dd.style.display='block'; dd._active=-1;
+    return;
+  }
+  dd.innerHTML=(sectionLabel?`<div style="padding:.4rem .8rem;font-size:.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">${sectionLabel}</div>`:'')+
+    list.map(({idx,p},i)=>`
+      <div class="ac-item" data-i="${i}" data-idx="${idx}" onmousedown="selectRxPatient(${idx})">
+        <div style="font-weight:600">${highlightMatch(p.Name,q)}</div>
+        <div style="font-size:0.72rem;color:#94a3b8">#${highlightMatch(p.patientNumber,q)} • ${highlightMatch(p.mobileNumber||'',q)}</div>
+      </div>`).join('');
+  dd.style.display='block';
+  dd._active=-1;
+}
+function handleRxPtKeydown(event){
+  const dd=document.getElementById('rx-pt-dropdown');
+  if(!dd||dd.style.display==='none') return;
+  const items=dd.querySelectorAll('.ac-item[data-idx]');
+  if(event.key==='ArrowDown'){
+    event.preventDefault();
+    dd._active=Math.min((dd._active??-1)+1,items.length-1);
+  }else if(event.key==='ArrowUp'){
+    event.preventDefault();
+    dd._active=Math.max((dd._active??-1)-1,0);
+  }else if(event.key==='Enter'){
+    if(dd._active>=0&&dd._active<items.length){
+      event.preventDefault();
+      selectRxPatient(parseInt(items[dd._active].dataset.idx));
+    }
+    return;
+  }else if(event.key==='Escape'){
+    closeRxPtDropdown();
+    return;
+  }else return;
+  items.forEach((el,i)=>el.classList.toggle('ac-active',i===dd._active));
+  const activeEl=items[dd._active];
+  if(activeEl) activeEl.scrollIntoView({block:'nearest'});
+}
+function closeRxPtDropdown(){
+  const dd=document.getElementById('rx-pt-dropdown');
+  if(dd){ dd.style.display='none'; dd._active=-1; }
+}
+function selectRxPatient(idx){
+  state.rxPatient=idx;
+  state.rxPatientQuery='';
+  const p=state.patients[idx];
+  if(p){
+    if(p.id) addRecentPatientId(p.id);
+    autofillPrescriptionFromPatient(p);
+  }
+  closeRxPtDropdown();
+  renderPrescription();
+  document.getElementById('page-prescription').style.display='';
+}
+function autofillPrescriptionFromPatient(p){
+  const appts=(p.appointments||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||b.id-a.id);
+  const latest=appts[0];
+  state.rxDiagnosis=(latest&&latest.diagnosis)||p.diagnosis||'';
+  const noteParts=[];
+  if(p.symptoms) noteParts.push(p.symptoms);
+  if(p.notes) noteParts.push(p.notes);
+  if(latest&&latest.visitNotes) noteParts.push(latest.visitNotes);
+  state.rxNotes=noteParts.join(' — ');
+  const drugSource=(latest&&latest.drugs)||'';
+  state.rxDrugs=drugSource
+    ? drugSource.split(/[,\n؛;]+/).map(s=>s.trim()).filter(Boolean).map(name=>({name,dose:''}))
+    : [];
+}
+function refreshRxPreview(){
+  const rxPt=state.rxPatient!=null?state.patients[state.rxPatient]:null;
+  const el=document.getElementById('rx-preview-wrap');
+  if(el) el.innerHTML=buildRxPreview(rxPt);
+}
+
+function setRxPrintMode(mode){
+  state.rxPrintMode=mode;
+  localStorage.setItem('rxPrintMode',mode);
+  renderPrescription();
+  document.getElementById('page-prescription').style.display='';
+}
+function addRxDrug(){ state.rxDrugs.push({name:'',dose:''}); renderPrescription(); document.getElementById('page-prescription').style.display=''; }
+function removeRxDrug(i){ state.rxDrugs.splice(i,1); renderPrescription(); document.getElementById('page-prescription').style.display=''; }
+function clearRx(){ state.rxDrugs=[]; state.rxPatient=null; state.rxDiagnosis=''; state.rxNotes=''; state.rxDate=null; renderPrescription(); document.getElementById('page-prescription').style.display=''; }
+
+async function printPrescription(){
+  const rxPt=state.rxPatient!=null?state.patients[state.rxPatient]:null;
+  
+  if(rxPt&&rxPt.id){
+    const date=document.getElementById('rx-date')?document.getElementById('rx-date').value:undefined;
+    apiPost('/prescriptions',{
+      patientId:rxPt.id, date, diagnosis:state.rxDiagnosis,
+      drugs:state.rxDrugs.filter(d=>d.name.trim()), notes:state.rxNotes,
+    }).catch(err=>console.error('Failed to save prescription history:',err));
+  }
+  
+  state.rxDrugs.filter(d=>d.name.trim()).forEach(d=>ensureMedicationInLibrary(d.name.trim(),d.dose.trim()));
+  const content=buildRxPreview(rxPt);
+  openRxPrintWindow(content);
+}
+
+async function ensureMedicationInLibrary(name,dose){
+  try{
+    const matches=await apiGet(`/medications/search?q=${encodeURIComponent(name)}`);
+    if(matches.some(m=>(m.drugName||'').toLowerCase()===name.toLowerCase())) return;
+    await apiPost('/medications/library',{drugName:name,dosage:dose||undefined});
+  }catch(err){ console.error('Failed to auto-save new medication:',err); }
+}
+
+function reopenPrescriptionRecord(idx,rx){
+  state.rxPatient=idx;
+  state.rxDiagnosis=rx.diagnosis||'';
+  state.rxNotes=rx.notes||'';
+  state.rxDrugs=(rx.drugs||[]).map(d=>({name:d.name||'',dose:d.dose||''}));
+  state.rxDate=rx.date||null;
+  closeDetail();
+  navigate('prescription');
+}
+function printPrescriptionRecord(idx,rx){
+  const pt=state.patients[idx];
+  const content=buildRxPreview(pt,{date:rx.date,diagnosis:rx.diagnosis,drugs:rx.drugs||[],notes:rx.notes});
+  openRxPrintWindow(content);
+}
+function openRxPrintWindow(content){
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/><title>Prescription</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:170mm 240mm;margin:0;}
+  html,body{height:100%;background:#fff;}
+  body{font-family:'Cairo',sans-serif;display:flex;justify-content:center;}
+  #rx-preview{position:relative;width:170mm;height:240mm;background:#fdfcfb;border-radius:0;overflow:hidden;
+    display:flex;flex-direction:column;box-shadow:none;}
+  #rx-preview .header{background:#2c1a2e;margin:0 5.6mm;border-radius:0 0 6mm 6mm;padding:5mm 6mm 6mm;display:flex;align-items:center;gap:3mm;direction:ltr;}
+  #rx-preview .header .en-block{flex:1;min-width:0;direction:ltr;text-align:left;color:#fff;}
+  #rx-preview .header .en-block .dr{font-weight:600;font-size:4.6mm;color:#fcce5b;letter-spacing:.5px;line-height:1.05;}
+  #rx-preview .header .en-block .name{font-weight:700;font-size:5.6mm;color:#fcce5b;letter-spacing:0;line-height:1.05;margin-bottom:1.6mm;white-space:nowrap;}
+  #rx-preview .header .en-block .sub1{font-weight:500;font-size:2.55mm;color:#fff;letter-spacing:.3px;line-height:1.35;}
+  #rx-preview .header .en-block .sub2{font-weight:500;font-size:2.15mm;color:#fff;letter-spacing:.2px;line-height:1.5;margin-top:.6mm;}
+  #rx-preview .header .logo-badge{flex:0 0 auto;width:33mm;height:41mm;border-radius:7mm;overflow:hidden;background:#fdfcfb;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+  #rx-preview .header .logo-badge img{width:100%;height:100%;object-fit:cover;display:block;}
+  #rx-preview .header .ar-block{flex:1;min-width:0;direction:rtl;text-align:right;color:#fff;}
+  #rx-preview .header .ar-block .doctor{font-weight:800;font-size:6.2mm;color:#fcce5b;line-height:1.05;}
+  #rx-preview .header .ar-block .name{font-weight:800;font-size:7.6mm;color:#fcce5b;line-height:1.1;margin-bottom:1.2mm;white-space:nowrap;letter-spacing:.5px;}
+  #rx-preview .header .ar-block .sub{font-weight:700;font-size:2.3mm;color:#fff;line-height:1.55;}
+  #rx-preview .patientbar{margin:2.4mm 5.6mm 0;border-radius:4mm;background:linear-gradient(120deg,#c8862e 0%,#f0c674 22%,#c8862e 48%,#f0c674 74%,#c8862e 100%);padding:2.6mm 4mm;}
+  #rx-preview .pb-row{display:flex;align-items:center;gap:2.2mm;padding:1.4mm 0;}
+  #rx-preview .pb-row + .pb-row{border-top:1px solid rgba(255,255,255,.35);}
+  #rx-preview .pb-field{display:flex;align-items:center;gap:1.6mm;}
+  #rx-preview .pb-field.grow{flex:1;min-width:0;}
+  #rx-preview .pb-field label{font-weight:800;font-size:2.95mm;color:#fff;white-space:nowrap;text-shadow:0 1px 1px rgba(0,0,0,.15);}
+  #rx-preview .pb-dots{flex:1;min-width:10mm;height:5mm;background:#fff;border-radius:1.8mm;border:1px dashed #b9863a;display:flex;align-items:center;padding:0 1.8mm;overflow:hidden;font-weight:600;font-size:2.7mm;color:#241526;white-space:nowrap;text-overflow:ellipsis;}
+  #rx-preview .pb-field.short .pb-dots{flex:0 0 24mm;}
+  #rx-preview .body{position:relative;flex:1;background:#fdfcfb;overflow:hidden;padding:9mm 8mm 24mm;direction:rtl;}
+  #rx-preview .rx-mark{position:absolute;top:5mm;left:6mm;width:15mm;z-index:1;}
+  #rx-preview .rx-mark img{width:100%;display:block;}
+  #rx-preview .watermark{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);width:54%;opacity:.92;pointer-events:none;z-index:0;}
+  #rx-preview .watermark img{width:100%;display:block;}
+  #rx-preview .rx-drug-line{position:relative;z-index:1;display:flex;gap:1.6mm;padding:1.6mm 1mm;border-bottom:1px dashed rgba(44,26,46,.2);align-items:flex-start;}
+  #rx-preview .rx-drug-num{font-weight:700;color:#2c1a2e;font-size:3.1mm;min-width:5mm;}
+  #rx-preview .rx-drug-name{font-weight:700;font-size:3.2mm;color:#1e1320;}
+  #rx-preview .rx-drug-dose{font-size:2.7mm;color:#475569;margin-top:.4mm;}
+  #rx-preview .rx-notes-box{position:relative;z-index:1;margin-top:2.6mm;padding:1.8mm 2.6mm;font-size:2.8mm;color:#475569;background:rgba(240,198,116,.22);border-radius:2mm;border:1px solid rgba(44,26,46,.12);}
+  #rx-preview .signature{position:absolute;left:6mm;bottom:6mm;width:46mm;z-index:1;}
+  #rx-preview .signature img{width:100%;display:block;}
+  #rx-preview .qr-badge{position:absolute;right:6mm;bottom:6mm;width:24mm;z-index:1;}
+  #rx-preview .qr-badge img{width:100%;display:block;border-radius:2mm;}
+  #rx-preview .footer-gold{height:2.6mm;background:linear-gradient(90deg,#c8862e,#f0c674,#dca63c,#f0c674,#c8862e);}
+  #rx-preview .footer{background:#2c1a2e;padding:3mm 5.6mm 4mm;color:#fff;}
+  #rx-preview .pills{display:flex;gap:2.2mm;margin-bottom:2.6mm;direction:ltr;}
+  #rx-preview .pill{background:#fff;color:#241526;border-radius:5mm;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2.9mm;padding:1.6mm 3mm;}
+  #rx-preview .pill.date{flex:0 0 26mm;gap:2mm;direction:ltr;}
+  #rx-preview .pill.info{flex:1;gap:2.4mm;direction:rtl;}
+  #rx-preview .pill.info .divider{width:1px;height:4mm;background:#241526;opacity:.6;}
+  #rx-preview .contact-row{display:flex;align-items:center;gap:2mm;margin-top:1.6mm;}
+  #rx-preview .icon-badge{flex:0 0 auto;width:5mm;height:5mm;border-radius:1.3mm;display:flex;align-items:center;justify-content:center;}
+  #rx-preview .icon-badge.wa{background:#2fa53e;}
+  #rx-preview .icon-badge.ph,#rx-preview .icon-badge.pin{background:#fcce5b;}
+  #rx-preview .icon-badge svg{width:3.1mm;height:3.1mm;}
+  #rx-preview .phone-num{font-weight:700;font-size:3.6mm;letter-spacing:.3px;direction:ltr;white-space:nowrap;}
+  #rx-preview .phone-num .accent{color:#fcce5b;}
+  #rx-preview .address-txt{font-weight:700;font-size:2.55mm;color:#fff;flex:1;text-align:right;}
+  
+  #rx-preview.rx-overlay-mode{background:transparent;box-shadow:none;}
+  .rx-overlay-mode .header,.rx-overlay-mode .patientbar,.rx-overlay-mode .footer-gold,.rx-overlay-mode .footer{background:transparent !important;}
+  .rx-overlay-mode .header .en-block,.rx-overlay-mode .header .ar-block,.rx-overlay-mode .header .logo-badge{visibility:hidden;}
+  .rx-overlay-mode .pb-field label{visibility:hidden;}
+  .rx-overlay-mode .pb-dots{background:transparent;border:none;}
+  .rx-overlay-mode .rx-mark,.rx-overlay-mode .watermark,.rx-overlay-mode .signature,.rx-overlay-mode .qr-badge{visibility:hidden;}
+  .rx-overlay-mode .rx-drug-line{border-bottom:none;}
+  .rx-overlay-mode .rx-notes-box{background:transparent;border:none;padding:1.8mm 0;}
+  .rx-overlay-mode .pills,.rx-overlay-mode .contact-row{visibility:hidden;}
+  </style></head><body>${content}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
+}
+
+const VISIT_TYPES=['consultation','followUp'];
+const VISIT_TYPE_DURATIONS={consultation:15,followUp:10};
+function visitTypeLabel(vt){
+  const map={consultation:t('visitTypeConsult'),followUp:t('visitTypeFollowUp')};
+  return map[vt]||vt||'—';
+}
+function visitTypeLabelWithDuration(vt){
+  const mins=VISIT_TYPE_DURATIONS[vt];
+  return mins?`${visitTypeLabel(vt)} (${mins} ${t('minutesAbbrev')})`:visitTypeLabel(vt);
+}
+function statusLabel(s){
+  const map={waiting:t('statusWaiting'),arrived:t('statusArrived'),in_consultation:t('statusInConsultation'),completed:t('statusCompleted'),cancelled:t('statusCancelled')};
+  return map[s]||s;
+}
+function statusColor(s){
+  const map={waiting:'#d97706',arrived:'#7c3aed',in_consultation:'#2563eb',completed:'#16a34a',cancelled:'#dc2626'};
+  return map[s]||'#64748b';
+}
+function formatDayLabel(iso){
+  if(!iso) return '';
+  const dt=new Date(iso+'T00:00:00');
+  return dt.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US',{weekday:'long',day:'numeric',month:'short'});
+}
+
+async function initBooking(){
+  try{
+    const meta=await apiGet(`/appointments/slots?visitType=${state.bookingVisitType}`);
+    state.bookingValidDays=meta.validDays||[];
+    if(!state.bookingDay||!state.bookingValidDays.includes(state.bookingDay))
+      state.bookingDay=state.bookingValidDays[0]||'';
+  }catch(e){ state.bookingValidDays=[]; }
+  state.bookingLoaded=true;
+  await loadBookingDay();
+}
+async function loadBookingDay(){
+  try{
+    const meta=await apiGet(`/appointments/slots?date=${state.bookingDay}&visitType=${state.bookingVisitType}`);
+    state.bookingSlots=meta.slots||[];
+  }catch(e){ state.bookingSlots=[]; }
+  try{
+    state.bookingList=state.bookingDay?await apiGet(`/appointments?date=${state.bookingDay}`):[];
+  }catch(e){ state.bookingList=[]; }
+  renderBooking();
+  document.getElementById('page-booking').style.display='';
+}
+
+function bookingListRows(){
+  const q=(state.bookingSearch||'').toLowerCase().trim();
+  let list=state.bookingList.filter(a=>a.status!=='cancelled');
+  if(q) list=list.filter(a=>(a.patientName||'').toLowerCase().includes(q)||String(a.patientNumber||'').toLowerCase().includes(q)||String(a.patientMobile||'').includes(q));
+  list=list.slice().sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+  if(!list.length) return `<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:2rem">${t('noApptsFound')}</td></tr>`;
+  return list.map(a=>`
+    <tr>
+      <td>${esc(a.patientName||'—')}<div style="font-size:0.72rem;color:#94a3b8">#${esc(a.patientNumber||'')}${a.patientMobile?' · '+esc(a.patientMobile):''}</div></td>
+      <td>${esc(a.time||'—')}</td>
+      <td>${visitTypeLabel(a.visitType)}</td>
+      <td><span style="font-weight:700;font-size:0.78rem;color:${statusColor(a.status)}">${statusLabel(a.status)}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="cancelBookingAppt(${a.id})">${t('cancelAppt')}</button></td>
+    </tr>`).join('');
+}
+function setBookingSearch(val){
+  state.bookingSearch=val;
+  const tbody=document.getElementById('bk-rows-tbody');
+  if(tbody) tbody.innerHTML=bookingListRows();
+}
+
+function renderBooking(){
+  if(!state.bookingLoaded){
+    document.getElementById('page-booking').innerHTML=`<div class="page"><div class="page-heading">${t('bookingTitle')}</div><p class="page-sub">${t('loading')}</p></div>`;
+    initBooking();
+    return;
+  }
+  const dayOptions=state.bookingValidDays.map(d=>`<option value="${d}" ${d===state.bookingDay?'selected':''}>${esc(formatDayLabel(d))}</option>`).join('');
+  const slotOptions=state.bookingSlots.length
+    ? state.bookingSlots.map(s=>`<option value="${s}">${s}</option>`).join('')
+    : `<option value="" disabled>${t('noSlotsDay')}</option>`;
+
+  document.getElementById('page-booking').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('bookingTitle')}</div>
+    <p class="page-sub">${t('bookingSub')}</p>
+    <div class="glass-card" style="padding:1rem 1.4rem;margin-bottom:1.2rem;background:rgba(var(--accent-light-rgb),.1);font-size:0.82rem;color:var(--accent-deep)">${t('bookingRulesHint')}</div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('bookAnyone')}</div>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('patientNameField')} *</label>
+          <input class="form-input" type="text" id="bk-name" autocomplete="off"/></div>
+        <div class="field-group"><label class="form-label">${t('patientPhoneField')}</label>
+          <input class="form-input" type="tel" id="bk-phone" placeholder="01xxxxxxxxx"/></div>
+        <div class="field-group"><label class="form-label">${t('visitType')}</label>
+          <select class="form-input" id="bk-type" onchange="onBookingTypeChange(this.value)">
+            ${VISIT_TYPES.map(vt=>`<option value="${vt}" ${state.bookingVisitType===vt?'selected':''}>${visitTypeLabelWithDuration(vt)}</option>`).join('')}
+          </select></div>
+        <div class="field-group"><label class="form-label">${t('chooseDay')}</label>
+          <select class="form-input" id="bk-day" onchange="onBookingDayChange(this.value)">${dayOptions}</select></div>
+        <div class="field-group"><label class="form-label">${t('chooseTime')}</label>
+          <select class="form-input" id="bk-time">
+            <option value="__nearest__">${t('nearestSlot')}</option>
+            ${slotOptions}
+          </select></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:1rem">
+        <button class="btn btn-primary" onclick="bookWalkin()">${t('bookBtn')}</button>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.4rem">${t('importAppointments')}</div>
+      <p class="page-sub" style="margin:0 0 1rem;font-size:0.78rem">${t('importFileHint')}</p>
+      <label class="btn btn-ghost" style="cursor:pointer">${t('importScheduleBtn')}
+        <input type="file" accept=".csv,.json,.txt" style="display:none" onchange="importAppointmentsFile(this)"/></label>
+    </div>
+    <div class="glass-card" style="padding:2rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem">
+        <div style="font-weight:700;font-size:1rem;color:var(--accent-deep)">${t('todaysBookingsList')} — ${esc(formatDayLabel(state.bookingDay))}</div>
+        <input class="form-input" style="padding:0.35rem 0.6rem;font-size:0.82rem;width:auto" type="text" id="bk-search"
+          placeholder="${t('bookingSearchPh')}" value="${esc(state.bookingSearch||'')}" oninput="setBookingSearch(this.value)"/>
+      </div>
+      <div class="med-table-wrap"><table>
+        <thead><tr>
+          <th>${t('invoicePatient')}</th><th>${t('apptTime')}</th><th>${t('visitType')}</th><th>${t('status')}</th><th>${t('actions')}</th>
+        </tr></thead>
+        <tbody id="bk-rows-tbody">${bookingListRows()}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function onBookingTypeChange(v){ state.bookingVisitType=v; loadBookingDay(); }
+function onBookingDayChange(v){ state.bookingDay=v; loadBookingDay(); }
+
+async function bookWalkin(){
+  const name=document.getElementById('bk-name').value.trim();
+  const mobile=document.getElementById('bk-phone').value.trim();
+  const visitType=document.getElementById('bk-type').value;
+  const timeSel=document.getElementById('bk-time').value;
+  if(!name){ toast(t('fillFields'),'error'); return; }
+  const body={name,mobileNumber:mobile,visitType};
+  if(timeSel==='__nearest__'){ body.nearest=true; }
+  else{ body.date=state.bookingDay; body.time=timeSel; }
+  try{
+    const res=await apiPost('/appointments/book',body);
+    toast(`${t('apptBooked')} — ${esc(formatDayLabel(res.date))} ${res.time}`,'success');
+    if(res.date&&state.bookingValidDays.includes(res.date)) state.bookingDay=res.date;
+    document.getElementById('bk-name').value='';
+    document.getElementById('bk-phone').value='';
+    await refreshAfterBooking();
+  }catch(err){ toast(err.message||t('fillFields'),'error'); }
+}
+
+async function importAppointmentsFile(inputEl){
+  const file=inputEl.files[0]; if(!file) return;
+  const fd=new FormData(); fd.append('file',file);
+  try{
+    const res=await apiUpload('/appointments/import',fd);
+    toast(`${res.imported} ${t('importedCount')}`,'success');
+    await refreshAfterBooking();
+  }catch(err){ toast(err.message||t('fileUploadFailed'),'error'); }
+  inputEl.value='';
+}
+
+async function cancelBookingAppt(id){
+  const confirmed=await showConfirm(t('confirmDel'),t('confirmDelMsg'),t('cancelAppt'));
+  if(!confirmed) return;
+  try{
+    await apiPut(`/appointments/${id}`,{status:'cancelled'});
+    toast(t('apptCancelled'),'info');
+    await refreshAfterBooking();
+  }catch(err){ toast(err.message||'Failed to cancel.','error'); }
+}
+
+async function refreshAfterBooking(){
+  try{ state.patients=(await apiGet('/patients?perPage=500')).items; }catch(e){}
+  await loadBookingDay();
+  if(state.homeQueueLoaded){ try{ state.homeQueue=await apiGet(`/appointments?date=${todayISO()}`); }catch(e){} }
+}
+
+function renderPatients(){
+  const q=(state.searchQuery||'').toLowerCase().trim();
+  let list=state.patients;
+  if(q) list=list.filter(p=>(p.Name||'').toLowerCase().includes(q)||String(p.patientNumber||'').toLowerCase().includes(q)||String(p.mobileNumber||'').includes(q));
+  const cardsHTML=list.length===0
+    ?`<div class="empty-state"><p>${t('noPatients')}</p></div>`
+    :`<div class="patient-grid">${list.map(p=>{
+        const idx=state.patients.indexOf(p);
+        return `
+        <div class="patient-card" onclick="openPatientDetail(${idx})">
+          <div class="avatar">${esc((p.Name||'?').charAt(0).toUpperCase())}</div>
+          <div class="p-name">${esc(p.Name)}</div>
+          <div class="p-num"># ${esc(p.patientNumber)}</div>
+          <div style="font-size:0.78rem;color:#64748b;margin-top:0.25rem">${genderLabel(p.gender)}${p.age!=null&&p.age!==''?' · '+t('age')+' '+esc(p.age):''}</div>
+          <div style="font-size:0.74rem;color:#94a3b8;margin-top:0.15rem">${esc(p.mobileNumber||'')}</div>
+          <div class="p-badge">${(p.appointments||[]).length} ${t('statAppt')}</div>
+        </div>`;
+      }).join('')}</div>`;
+  document.getElementById('page-patients').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('patientsTitle')}</div>
+    <p class="page-sub">${t('patientsSub')}</p>
+    ${cardsHTML}
+  </div>`;
+}
+
+function buildReportsSectionHTML(){
+  const d=state.reportsData;
+  if(!d) return '';
+  const maxVisits=Math.max(1,...d.visitsPerDay.map(v=>v.visits));
+  const barsHTML=d.visitsPerDay.map(v=>`
+    <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:0.3rem">
+      <div style="width:100%;max-width:22px;background:linear-gradient(180deg,rgb(var(--accent-light-rgb)),var(--accent));border-radius:4px 4px 0 0;height:${Math.max(4,(v.visits/maxVisits)*100)}px"></div>
+      <div style="font-size:0.62rem;color:#94a3b8;white-space:nowrap;writing-mode:vertical-rl;text-orientation:mixed;height:32px">${esc(v.date.slice(5))}</div>
+      <div style="font-size:0.68rem;font-weight:700;color:var(--accent-deep)">${v.visits}</div>
+    </div>`).join('');
+
+  const visitTypesHTML=d.visitTypes.length===0
+    ?`<p style="color:#94a3b8;font-size:0.85rem">—</p>`
+    :d.visitTypes.map(v=>`<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid rgba(148,163,184,.15);font-size:0.85rem">
+        <span>${esc(visitTypeLabel(v.visitType)||v.visitType)}</span><span style="font-weight:700;color:var(--accent-deep)">${v.count}</span></div>`).join('');
+
+  const revenueHTML=`<div style="display:flex;gap:1rem;flex-wrap:wrap">
+    <div class="stat-card glass-card" style="flex:1"><div class="stat-num">${(d.revenueByStatus.unpaid||0).toFixed(2)}</div><div class="stat-label">${t('unpaid')}</div></div>
+    <div class="stat-card glass-card" style="flex:1"><div class="stat-num">${(d.revenueByStatus.partial||0).toFixed(2)}</div><div class="stat-label">${t('partial')}</div></div>
+    <div class="stat-card glass-card" style="flex:1"><div class="stat-num">${(d.revenueByStatus.paid||0).toFixed(2)}</div><div class="stat-label">${t('paid')}</div></div>
+  </div>`;
+
+  return `
+    <div style="display:flex;align-items:center;gap:0.4rem;font-weight:700;font-size:1.05rem;color:var(--accent-deep);margin:2rem 0 0.2rem">${icoReports()} ${t('reportsTitle')}</div>
+    <p class="page-sub" style="margin-bottom:1.2rem">${t('reportsSub')}</p>
+    <div class="stats-row">
+      <div class="stat-card glass-card"><div class="stat-num">${d.patientSummary.totalPatients}</div><div class="stat-label">${t('statPt')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${d.patientSummary.totalAppointments}</div><div class="stat-label">${t('statAppt')}</div></div>
+      <div class="stat-card glass-card"><div class="stat-num">${d.patientSummary.newPatientsLast30Days}</div><div class="stat-label">${t('newPatients30d')}</div></div>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('visitsPerDay')}</div>
+      <div style="display:flex;align-items:flex-end;gap:0.4rem;height:140px">${barsHTML}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div class="glass-card" style="padding:2rem">
+        <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('visitTypeBreakdown')}</div>
+        ${visitTypesHTML}
+      </div>
+      <div class="glass-card" style="padding:2rem">
+        <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('revenueByStatus')}</div>
+        ${revenueHTML}
+      </div>
+    </div>`;
+}
+
+async function fetchSettingsData(){
+  const results=await Promise.allSettled([
+    apiGet('/reports/visits-per-day?days=14'), apiGet('/reports/patient-summary'),
+    apiGet('/reports/visit-types'), apiGet('/reports/revenue-by-status'),
+  ]);
+  const [visitsPerDay,patientSummary,visitTypes,revenueByStatus]=
+    results.map(r=>r.status==='fulfilled'?r.value:null);
+  state.reportsData={visitsPerDay:visitsPerDay||[],patientSummary:patientSummary||{},visitTypes:visitTypes||[],revenueByStatus:revenueByStatus||[]};
+  if(results.some(r=>r.status==='rejected')){
+    toast('Some settings data failed to load.','error');
+  }
+  state.settingsLoaded=true;
+  renderSettings();
+  document.getElementById('page-settings').style.display='';
+}
+
+function renderSettings(){
+  if(!state.settingsLoaded){
+    document.getElementById('page-settings').innerHTML=`<div class="page"><div class="page-heading">${t('settingsTitle')}</div></div>`;
+    fetchSettingsData();
+    return;
+  }
+
+  document.getElementById('page-settings').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('settingsTitle')}</div>
+    <p class="page-sub">${t('settingsSub')}</p>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.3rem">${t('monthlyReport')}</div>
+      <p class="page-sub" style="margin:0 0 1.2rem">${t('monthlyReportSub')}</p>
+      <button class="btn btn-primary" onclick="generateMonthlyReport()">${t('generateMonthlyReport')}</button>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.3rem">${t('dataTransfer')}</div>
+      <p class="page-sub" style="margin:0 0 1.2rem">${t('importDataHint')}</p>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="downloadBackup()">${t('exportData')}</button>
+        <label class="btn btn-ghost" style="cursor:pointer">${t('importData')}
+          <input type="file" accept=".json" style="display:none" onchange="importData(this)"/></label>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.3rem">${t('appearance')}</div>
+      <p class="page-sub" style="margin:0 0 1.2rem">${t('appearanceSub')}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.9rem">
+        ${THEMES.map(th=>`
+          <div onclick="applyTheme('${th.id}',{rerenderSettings:true});toast(t('themeApplied'),'success')"
+               style="cursor:pointer;border-radius:14px;padding:.7rem;text-align:center;
+                      border:2px solid ${state.activeTheme===th.id?'rgb('+th.accentRgb+')':'transparent'};
+                      background:${state.activeTheme===th.id?'rgba('+th.accentRgb+',.08)':'transparent'};
+                      transition:border-color .15s">
+            <div style="height:38px;border-radius:9px;margin-bottom:.5rem;
+                        background:linear-gradient(135deg,${th.bg[0]} 0%,rgb(${th.accentLightRgb}) 45%,rgb(${th.accentRgb}) 75%,${th.accentDeep} 100%);
+                        box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)"></div>
+            <div style="font-size:.74rem;font-weight:600;color:${state.activeTheme===th.id?th.accentDeep:'#475569'}">${esc(th.name)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${buildReportsSectionHTML()}
+  </div>`;
+}
+
+async function generateMonthlyReport(){
+  let data;
+  try{ data=await apiGet('/reports/monthly'); }
+  catch(err){ toast(err.message||'Failed to load report.','error'); return; }
+  const rows=[
+    [t('repNewVisits'),data.newVisits],
+    [t('repFollowUps'),data.followUps],
+    [t('repTotalVisits'),data.totalVisits],
+    [t('completedTodayStat'),data.completedVisits],
+    [t('repCollected'),Number(data.moneyCollected).toFixed(2)],
+    [t('repBilled'),Number(data.totalBilled).toFixed(2)],
+    [t('repOutstanding'),Number(data.outstanding).toFixed(2)],
+  ];
+  const content=`
+    <div class="rep-head">
+      <div class="rep-dr">${esc(t('doctorName'))}</div>
+      <div class="rep-title">${esc(t('monthlyReport'))} — ${esc(data.label)}</div>
+    </div>
+    <table class="rep-table">
+      ${rows.map(([k,v])=>`<tr><td class="rep-k">${esc(k)}</td><td class="rep-v">${esc(v)}</td></tr>`).join('')}
+    </table>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="${currentLang}" dir="${currentLang==='ar'?'rtl':'ltr'}"><head><meta charset="UTF-8"/><title>${esc(t('monthlyReport'))}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:A4;margin:16mm;}
+  body{font-family:'Cairo',sans-serif;color:#1e1330;padding:10px;}
+  .rep-head{border-bottom:2px solid #2c1a2e;padding-bottom:10px;margin-bottom:18px;}
+  .rep-dr{font-weight:800;font-size:1.4rem;color:#2c1a2e;}
+  .rep-title{font-size:1rem;color:#475569;margin-top:4px;}
+  .rep-table{width:100%;border-collapse:collapse;}
+  .rep-table td{padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:0.95rem;}
+  .rep-k{font-weight:700;color:#475569;}
+  .rep-v{text-align:end;font-weight:700;color:#1e1330;}
+  </style></head><body>${content}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),400);
+}
+
+async function downloadBackup(){
+  try{
+    const data=await apiGet('/settings/backup');
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`clinic-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(err){ toast(err.message||'Failed to download backup.','error'); }
+}
+
+async function importData(inputEl){
+  const file=inputEl.files[0]; if(!file) return;
+  const fd=new FormData(); fd.append('file',file);
+  try{
+    await apiUpload('/settings/import',fd);
+    toast(t('importDone'),'success');
+    await loadInitialData();
+  }catch(err){ toast(err.message||'Failed to import data.','error'); }
+  inputEl.value='';
+}
+
+function checkRuntimeEnvironment(){
+  if(location.protocol!=='file:') return false;
+  document.body.innerHTML=`
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1e1b2e;padding:2rem;font-family:'DM Sans',sans-serif;">
+      <div style="max-width:560px;background:#fff;border-radius:16px;padding:2.2rem;box-shadow:0 10px 40px rgba(0,0,0,.25);">
+        <div style="font-size:2rem;margin-bottom:.6rem;">&#9888;&#65039;</div>
+        <h2 style="margin:0 0 .8rem;color:#1e1b2e;">This app needs to run through its server</h2>
+        <p style="color:#444;line-height:1.6;margin:0 0 1rem;">
+          You opened this file directly from your computer (<code>file://...</code>), so the page has
+          no server to talk to — that's why you see "Failed to fetch" / "Cannot reach the server"
+          messages and nothing loads or saves.
+        </p>
+        <p style="color:#444;line-height:1.6;margin:0 0 1rem;"><strong>To fix it:</strong></p>
+        <ol style="color:#444;line-height:1.7;margin:0 0 1rem;padding-left:1.2rem;">
+          <li>Open a terminal in the project folder.</li>
+          <li>Run: <code>cd backend &amp;&amp; python3 app.py</code></li>
+          <li>Open <code>http://localhost:5000</code> in your browser — not this file.</li>
+        </ol>
+        <p style="color:#777;font-size:.9rem;margin:0;">See README.md, "Set up and run the backend", for full setup steps.</p>
+      </div>
+    </div>`;
+  return true;
+}
+const AUTH_KEY='clinicAuthed';
+function markAuthenticated(){ sessionStorage.setItem(AUTH_KEY,'1'); }
+function isAuthenticated(){ return sessionStorage.getItem(AUTH_KEY)==='1'; }
+
+let liveSyncTimer=null;
+function startLiveSync(){
+  if(liveSyncTimer) clearInterval(liveSyncTimer);
+  liveSyncTimer=setInterval(liveSyncTick,60000);
+}
+async function liveSyncTick(){
+  if(!isAuthenticated()||state.currentPage==='signIn') return;
+  try{
+    const res=await apiGet('/patients?perPage=500');
+    state.patients=res.items;
+  }catch(err){ return; }
+  if(state.currentPage==='home'){ await fetchHomeQueue(); }
+  else if(state.currentPage==='patients'){ renderPatients(); }
+  else if(state.currentPage==='booking'&&state.bookingLoaded){ await loadBookingDay(); }
+}
+
+async function bootApp(){
+  applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'ocean');
+  if(checkRuntimeEnvironment()) return;
+  startLiveSync();
+  if(isAuthenticated()){
+    await loadInitialData();
+    navigate('home');
+  }else{
+    navigate('signIn');
+  }
+}
+bootApp();
+</script>
+</body>
+</html>

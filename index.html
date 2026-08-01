@@ -316,7 +316,6 @@ body.rtl .info-item .info-key{text-transform:none;letter-spacing:0;}
   <div id="page-medications"  style="display:none"></div>
   <div id="page-prescription" style="display:none"></div>
   <div id="page-booking"      style="display:none"></div>
-  <div id="page-queue"        style="display:none"></div>
   <div id="page-financial"    style="display:none"></div>
   <div id="page-settings"     style="display:none"></div>
 
@@ -691,7 +690,6 @@ const state = {
   currentPage:'signIn',
   patients:[], appointments:[], medications:[],
   searchQuery:'', medSort:'recent',
-  queueList:[], queueLoaded:false,
   invoiceList:[], invoiceSummary:null, invoicesLoaded:false, financialSearch:'',
   rxPatient: null, rxDiagnosis:'', rxNotes:'', rxDrugs:[], rxDate:null,
   rxPatientQuery:'', rxPatientDropdownOpen:false,
@@ -885,7 +883,7 @@ function resolveConfirm(v){
   if(_cr){_cr(v);_cr=null;}
 }
 
-const ALL_PAGES=['signIn','home','patients','addPatient','medications','prescription','booking','queue','financial','settings'];
+const ALL_PAGES=['signIn','home','patients','addPatient','medications','prescription','booking','financial','settings'];
 
 function navigate(page){
   ALL_PAGES.forEach(p=>{
@@ -908,7 +906,6 @@ function buildNavLinks(activePage){
   const pages=[
     {id:'home',        label:()=>t('home'),         icon:icoHome()},
     {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
-    {id:'queue',       label:()=>t('queue'),        icon:icoQueue()},
     {id:'patients',    label:()=>t('patients'),     icon:icoDoctor()},
     {id:'addPatient',  label:()=>t('addPatient'),   icon:icoAddPt()},
     {id:'prescription',label:()=>t('prescription'), icon:icoRx()},
@@ -932,7 +929,6 @@ function renderPage(page){
   else if(page==='medications') renderMedications();
   else if(page==='prescription')renderPrescription();
   else if(page==='booking')     renderBooking();
-  else if(page==='queue')       renderQueue();
   else if(page==='financial')   renderFinancial();
   else if(page==='settings')    renderSettings();
 }
@@ -2434,91 +2430,6 @@ async function removeMedication(i){
   }catch(err){ toast(err.message||'Failed to delete medication.','error'); }
 }
 
-async function fetchQueueList(){
-  try{
-    state.queueList=await apiGet(`/appointments?date=${todayISO()}`);
-  }catch(err){ toast(err.message||'Failed to load queue.','error'); state.queueList=[]; }
-  state.queueLoaded=true;
-  renderQueue();
-  document.getElementById('page-queue').style.display='';
-}
-
-function renderQueue(){
-  if(!state.queueLoaded){
-    document.getElementById('page-queue').innerHTML=`<div class="page"><div class="page-heading">${t('queueTitle')}</div></div>`;
-    fetchQueueList();
-    return;
-  }
-  const cols=[
-    {status:'waiting',label:t('statusWaiting'),color:'#d97706',bg:'rgba(217,119,6,.08)'},
-    {status:'arrived',label:t('statusArrived'),color:'#7c3aed',bg:'rgba(124,58,237,.08)'},
-    {status:'in_consultation',label:t('statusInConsultation'),color:'#2563eb',bg:'rgba(37,99,235,.08)'},
-    {status:'completed',label:t('statusCompleted'),color:'#16a34a',bg:'rgba(22,163,74,.08)'},
-    {status:'cancelled',label:t('statusCancelled'),color:'#dc2626',bg:'rgba(220,38,38,.08)'},
-  ];
-  const colsHTML=cols.map(c=>{
-    const items=state.queueList.filter(a=>(a.status||'waiting')===c.status);
-    const cardsHTML=items.length===0
-      ?`<p style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:1rem 0">—</p>`
-      :items.map(a=>`
-        <div style="background:rgba(255,255,255,.7);border-radius:12px;padding:0.7rem 0.85rem;margin-bottom:0.6rem;border:1px solid rgba(255,255,255,.8)">
-          <div style="font-weight:600;font-size:0.85rem;color:#1e293b">${esc(a.patientName||'—')}</div>
-          <div style="font-size:0.74rem;color:#64748b">${esc(a.time||'')} · ${visitTypeLabel(a.visitType)}</div>
-          <div style="display:flex;gap:0.35rem;margin-top:0.5rem;flex-wrap:wrap">
-            ${c.status==='waiting'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'arrived')">${t('checkIn')}</button>`:''}
-            ${c.status==='waiting'||c.status==='arrived'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'in_consultation')">${t('startConsult')}</button>`:''}
-            ${c.status==='in_consultation'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'completed')">${t('complete')}</button>`:''}
-            ${c.status==='waiting'||c.status==='arrived'||c.status==='in_consultation'?`<button class="btn btn-danger btn-sm" onclick="setQueueStatus(${a.id},'cancelled')">${t('cancelAppt')}</button>`:''}
-          </div>
-        </div>`).join('');
-    return `<div style="flex:1;min-width:200px">
-      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c.color}"></span>
-        <span style="font-weight:700;font-size:0.82rem;color:${c.color}">${c.label}</span>
-        <span style="font-size:0.76rem;color:#94a3b8">(${items.length})</span>
-      </div>
-      <div style="background:${c.bg};border-radius:16px;padding:0.8rem;min-height:120px">${cardsHTML}</div>
-    </div>`;
-  }).join('');
-
-  const rowsHTML=state.queueList.length===0
-    ?`<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:2rem">${t('noQueueToday')}</td></tr>`
-    :state.queueList.map(a=>`
-      <tr>
-        <td>${esc(a.patientName||'—')}</td>
-        <td>${esc(a.time||'—')}</td>
-        <td><span style="font-weight:700;font-size:0.8rem;color:${statusColor(a.status)}">${statusLabel(a.status)}</span></td>
-        <td>
-          ${a.status==='waiting'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'arrived')">${t('checkIn')}</button>`:''}
-          ${a.status==='waiting'||a.status==='arrived'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'in_consultation')">${t('startConsult')}</button>`:''}
-          ${a.status==='in_consultation'?`<button class="btn btn-ghost btn-sm" onclick="setQueueStatus(${a.id},'completed')">${t('complete')}</button>`:''}
-        </td>
-      </tr>`).join('');
-
-  document.getElementById('page-queue').innerHTML=`
-  <div class="page">
-    <div class="page-heading">${t('queueTitle')}</div>
-    <p class="page-sub">${t('queueSub')}</p>
-    ${state.queueList.length===0?`<div class="empty-state"><p>${t('noQueueToday')}</p></div>`:
-    `<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">${colsHTML}</div>`}
-    <div class="glass-card" style="padding:2rem">
-      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1.2rem">${t('todaysBookings')}</div>
-      <div class="med-table-wrap"><table>
-        <thead><tr><th>${t('invoicePatient')}</th><th>${t('apptTime')}</th><th>${t('status')}</th><th>${t('actions')}</th></tr></thead>
-        <tbody>${rowsHTML}</tbody>
-      </table></div>
-    </div>
-  </div>`;
-}
-
-async function setQueueStatus(id,status){
-  try{
-    await apiPut(`/appointments/${id}`,{status});
-    await fetchQueueList();
-    if(state.homeQueueLoaded){ try{ state.homeQueue=await apiGet(`/appointments?date=${todayISO()}`); }catch(e){} }
-  }catch(err){ toast(err.message||'Failed to update status.','error'); }
-}
-
 async function fetchFinancialData(){
   const [invoicesRes,summaryRes]=await Promise.allSettled([apiGet('/financial/invoices'),apiGet('/financial/summary')]);
   state.invoiceList=invoicesRes.status==='fulfilled'?invoicesRes.value:[];
@@ -2843,7 +2754,6 @@ async function liveSyncTick(){
   if(state.currentPage==='home'){ await fetchHomeQueue(); }
   else if(state.currentPage==='patients'){ renderPatients(); }
   else if(state.currentPage==='booking'&&state.bookingLoaded){ await loadBookingDay(); }
-  else if(state.currentPage==='queue'&&state.queueLoaded){ await fetchQueueList(); }
 }
 
 async function bootApp(){

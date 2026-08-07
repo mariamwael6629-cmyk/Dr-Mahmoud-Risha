@@ -45,4 +45,6 @@ class Appointment(db.Model):
             data["patientName"] = self.patient.name
             data["patientNumber"] = self.patient.patient_number
             data["patientMobile"] = self.patient.mobile_number
+            data["patientAge"] = self.patient.age
+            data["patientGender"] = self.patient.gender
         return data

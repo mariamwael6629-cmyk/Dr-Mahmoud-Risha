@@ -9,12 +9,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if not exist "venv\Scripts\pythonw.exe" (
-    echo Setting up for the first time, please wait...
-    python -m venv venv
-    venv\Scripts\python -m pip install --upgrade pip
-    venv\Scripts\pip install -r requirements.txt
-)
+if exist "venv" rmdir /s /q "venv"
+
+echo Installing, please wait...
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 powershell -NoProfile -Command "$w=New-Object -ComObject WScript.Shell; $s=$w.CreateShortcut('%STARTUP%\Clinic Server.lnk'); $s.TargetPath='%~dp0run_silent.vbs'; $s.WorkingDirectory='%~dp0'; $s.Save()"
@@ -24,8 +23,7 @@ start "" wscript.exe "%~dp0run_silent.vbs"
 
 echo.
 echo Done.
-echo - The server will now start automatically every time Windows starts.
+echo - The server will start automatically every time Windows starts.
 echo - A shortcut "Dr Mahmoud Risha Clinic" was placed on your Desktop.
-echo   Double-click it any time to open the system.
 echo.
 pause

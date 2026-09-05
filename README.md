@@ -69,13 +69,18 @@ release) control which PC is which:
 **On the nurse's PC**
 
 1. Copy `Dr-Risha-Clinic.exe` and `CONNECT-TO.txt` into a folder.
-2. Open `CONNECT-TO.txt` and replace the placeholder line with the doctor PC's
-   address (e.g. `192.168.1.20`). Save.
+2. Leave `CONNECT-TO.txt` as `AUTO` (the default). The nurse's PC then finds
+   the doctor's PC automatically on the network — no IP address to type or
+   maintain, even if the router changes the doctor PC's address later. (You may
+   instead write a fixed IP inside `CONNECT-TO.txt` to force a specific
+   address.)
 3. Double-click the .exe — it opens the **same** clinic data in a clean window.
    (It does not run its own server; it just connects to the doctor's PC.)
 
-Both PCs must be on the same network, and the doctor's PC must be on with the
-app open for the nurse's PC to connect.
+Auto-discovery uses a small UDP broadcast on port 5001; the main PC's
+firewall allows it automatically along with the web port. Both PCs must be on
+the same network, and the doctor's PC must be on with the app open for the
+nurse's PC to connect.
 
 ---
 

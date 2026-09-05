@@ -30,6 +30,9 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 PORT = 5000
+DISCOVERY_PORT = 5001
+DISCOVERY_REQUEST = b"DR-RISHA-CLINIC-DISCOVERY?"
+DISCOVERY_REPLY = b"DR-RISHA-CLINIC:"
 WINDOW_TITLE = "Dr Mahmoud Risha Clinic"
 
 
@@ -86,24 +89,70 @@ def _lan_ip():
 
 
 def _add_firewall_rule():
-    """Best-effort: allow inbound TCP 5000 so LAN clients can connect."""
+    """Best-effort: allow inbound TCP 5000 (web) and UDP 5001 (auto-discovery)
+    so LAN clients can find and connect to this PC."""
     if os.name != "nt":
         return
     import subprocess
-    cmd = [
-        "netsh", "advfirewall", "firewall", "add", "rule",
-        "name=Dr Risha Clinic", "dir=in", "action=allow",
-        "protocol=TCP", "localport=%d" % PORT,
+    rules = [
+        ["name=Dr Risha Clinic", "protocol=TCP", "localport=%d" % PORT],
+        ["name=Dr Risha Clinic Discovery", "protocol=UDP",
+         "localport=%d" % DISCOVERY_PORT],
     ]
+    for extra in rules:
+        cmd = ["netsh", "advfirewall", "firewall", "add", "rule",
+               "dir=in", "action=allow"] + extra
+        try:
+            subprocess.run(
+                cmd,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except Exception:
+            pass  # Not admin: Windows shows its own one-time allow prompt.
+
+
+def _discovery_responder():
+    """On the main PC: answer LAN 'where is the clinic server?' broadcasts."""
     try:
-        subprocess.run(
-            cmd,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            timeout=10,
-        )
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("", DISCOVERY_PORT))
     except Exception:
-        pass  # Not admin: Windows will show its own one-time allow prompt.
+        return
+    while True:
+        try:
+            data, addr = s.recvfrom(1024)
+            if data.strip() == DISCOVERY_REQUEST:
+                s.sendto(DISCOVERY_REPLY + _lan_ip().encode("utf-8"), addr)
+        except Exception:
+            time.sleep(0.5)
+
+
+def _discover_server(timeout=6):
+    """On the nurse's PC: find the main PC automatically on the LAN."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.settimeout(1.0)
+    except Exception:
+        return None
+    end = time.time() + timeout
+    try:
+        while time.time() < end:
+            try:
+                s.sendto(DISCOVERY_REQUEST, ("255.255.255.255", DISCOVERY_PORT))
+                data, _addr = s.recvfrom(1024)
+                if data.startswith(DISCOVERY_REPLY):
+                    return data[len(DISCOVERY_REPLY):].decode("utf-8").strip()
+            except socket.timeout:
+                continue
+            except Exception:
+                break
+    finally:
+        s.close()
+    return None
 
 
 def _serve(host):
@@ -207,8 +256,22 @@ def _run_client(server_addr):
         if line and not line.startswith("#"):
             host = line
             break
-    host = host.replace("http://", "").replace("https://", "")
-    host = host.split("/")[0].split(":")[0].strip()
+
+    # "AUTO" (or an unfilled placeholder) -> find the main PC automatically.
+    if host == "" or host.upper() == "AUTO" or host.upper().startswith("PUT-"):
+        found = _discover_server()
+        if not found:
+            _message_box(
+                "Could not find the doctor's PC on the network.\n\n"
+                "Make sure the doctor's computer is turned on, the clinic app "
+                "is open on it, and both PCs are on the same Wi-Fi / network."
+            )
+            return
+        host = found
+    else:
+        host = host.replace("http://", "").replace("https://", "")
+        host = host.split("/")[0].split(":")[0].strip()
+
     url = "http://%s:%d" % (host, PORT)
 
     if not _port_is_open(host, PORT, timeout=3):
@@ -239,6 +302,9 @@ def _run_server(share_on_network):
                     )
             except Exception:
                 pass
+
+        if share_on_network:
+            threading.Thread(target=_discovery_responder, daemon=True).start()
 
         threading.Thread(target=_serve, args=(host,), daemon=True).start()
         if not _wait_until_up("127.0.0.1"):

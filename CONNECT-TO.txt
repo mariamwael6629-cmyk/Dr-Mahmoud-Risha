@@ -1,4 +1,4 @@
-# ضعي هذا الملف في نفس فولدر Dr-Risha-Clinic.exe على جهاز الممرضة.
-# غيّري السطر اللي تحت لعنوان جهاز الدكتور (هتلاقيه في ملف THIS-PC-ADDRESS.txt على جهاز الدكتور).
-# Replace the line below with the doctor PC address from THIS-PC-ADDRESS.txt
-PUT-THE-DOCTOR-PC-ADDRESS-HERE
+# ملف جهاز الممرضة. حطيه جنب Dr-Risha-Clinic.exe وشغّلي البرنامج.
+# كلمة AUTO معناها: لاقي جهاز الدكتور تلقائيًا على الشبكة (مش محتاجة تكتبي أي IP).
+# لو حبيتي تحددي عنوان يدوي بدل التلقائي، امسحي AUTO واكتبي مكانها عنوان جهاز الدكتور.
+AUTO

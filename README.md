@@ -29,7 +29,32 @@ generator matching the clinic's real letterhead.
 
 ---
 
-## 🚀 Installation & Local Setup
+## 🖱️ One-click desktop app (recommended for the clinic PC)
+
+For the doctor's computer you do **not** need to install Python or run any
+commands. A single Windows program does everything:
+
+1. Open the **Releases** page of this repository and download
+   **`Dr-Risha-Clinic.exe`** (built automatically by the *Build Windows EXE*
+   GitHub Action).
+2. Put it on the Desktop (or right-click → *Send to → Desktop* to make a
+   shortcut with the clinic logo).
+3. Double-click it. The clinic system opens in its own clean window.
+4. Close the window when finished — the server shuts down with it.
+
+There is no console window, no Python install, no package installation, and
+no Windows Firewall permission prompt (the app talks only to itself on
+`127.0.0.1`). Patient data is stored in a `ClinicData` folder created next to
+the `.exe`, so keep the program in a fixed location (e.g. its own folder on
+the Desktop).
+
+> First launch only: because the file is not code-signed, Windows may show a
+> blue *"Windows protected your PC"* screen. Click **More info → Run anyway**
+> once; it will not appear again on that PC.
+
+---
+
+## 🚀 Installation & Local Setup (developers)
 
 ### Requirements
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - claude/clinic-management-updates-0l436n
+      - claude/simple-desktop-app-kzloh9
     paths:
       - backend/**
       - index.html
@@ -30,20 +30,23 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pyinstaller
 
-      - name: Build Clinic.exe
+      - name: Build Dr-Risha-Clinic.exe
         run: >
-          pyinstaller --onefile --noconsole --name Clinic
+          pyinstaller --onefile --noconsole --name "Dr-Risha-Clinic"
+          --icon assets/rx-logo.ico
           --paths backend
           --add-data "index.html;."
           --add-data "assets;assets"
           --hidden-import flask_sqlalchemy
+          --hidden-import waitress
+          --collect-submodules waitress
           --exclude-module flasgger
           backend/desktop_app.py
 
       - name: Smoke test the exe
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "dist\Clinic.exe" -PassThru
+          $p = Start-Process -FilePath "dist\Dr-Risha-Clinic.exe" -PassThru
           Start-Sleep -Seconds 30
           try {
             $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5000" -TimeoutSec 20
@@ -58,12 +61,22 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Clinic-exe
-          path: dist/Clinic.exe
+          name: Dr-Risha-Clinic-exe
+          path: dist/Dr-Risha-Clinic.exe
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: exe-${{ github.run_number }}
-          name: Clinic desktop app (build ${{ github.run_number }})
-          files: dist/Clinic.exe
+          tag_name: clinic-${{ github.run_number }}
+          name: Dr Mahmoud Risha Clinic (build ${{ github.run_number }})
+          body: |
+            One-click desktop app for the Dr Mahmoud Risha Clinic system.
+
+            How to use:
+            1. Download **Dr-Risha-Clinic.exe** below.
+            2. Put it on the Desktop (right-click -> Send to -> Desktop for a shortcut).
+            3. Double-click it. The clinic app opens in its own window.
+            4. Close the window when finished — everything shuts down cleanly.
+
+            No Python, no install, no console window, no network permission prompt.
+          files: dist/Dr-Risha-Clinic.exe

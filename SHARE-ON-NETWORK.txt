@@ -1,0 +1,6 @@
+# ضعي هذا الملف في نفس فولدر Dr-Risha-Clinic.exe على جهاز الدكتور (الجهاز الرئيسي).
+# مجرد وجوده بيشغّل مشاركة البيانات على الشبكة عشان جهاز الممرضة يشوف نفس المرضى.
+# مش محتاجة تكتبي أي حاجة تانية هنا.
+#
+# Place this file next to Dr-Risha-Clinic.exe on the DOCTOR'S (main) PC.
+# Its presence turns on network sharing for the nurse's PC.

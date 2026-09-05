@@ -52,6 +52,31 @@ the Desktop).
 > blue *"Windows protected your PC"* screen. Click **More info → Run anyway**
 > once; it will not appear again on that PC.
 
+### 🖧 Sharing data with a second PC (nurse's desk)
+
+The doctor's PC holds the data; the nurse's PC views the same records over the
+clinic's local network (Wi-Fi/LAN). Two tiny text files (shipped with the
+release) control which PC is which:
+
+**On the doctor's (main) PC**
+
+1. Put `SHARE-ON-NETWORK.txt` in the **same folder** as `Dr-Risha-Clinic.exe`.
+2. Run the app. The first time, Windows asks once to allow it through the
+   firewall — click **Allow access**.
+3. A file `THIS-PC-ADDRESS.txt` appears next to the .exe with this PC's
+   address, e.g. `192.168.1.20`. Note it down.
+
+**On the nurse's PC**
+
+1. Copy `Dr-Risha-Clinic.exe` and `CONNECT-TO.txt` into a folder.
+2. Open `CONNECT-TO.txt` and replace the placeholder line with the doctor PC's
+   address (e.g. `192.168.1.20`). Save.
+3. Double-click the .exe — it opens the **same** clinic data in a clean window.
+   (It does not run its own server; it just connects to the doctor's PC.)
+
+Both PCs must be on the same network, and the doctor's PC must be on with the
+app open for the nurse's PC to connect.
+
 ---
 
 ## 🚀 Installation & Local Setup (developers)

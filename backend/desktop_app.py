@@ -1,13 +1,22 @@
 """Desktop launcher for the Dr Mahmoud Risha Clinic system.
 
-Goals (what the user asked for):
-  * One click -> the app opens, no black console window, no dialogs.
-  * No Windows Firewall permission prompt (we bind to 127.0.0.1 only, so
-    Windows never asks to allow the app on the network).
-  * Opens as a clean app window (Edge/Chrome "app mode"), not a browser tab.
-  * When that window is closed, everything shuts down cleanly.
-  * Nothing to install: when built as a single .exe, Python and every
-    library are already inside it.
+One .exe, three simple behaviours decided by small text files placed next to
+the .exe (no code changes needed by the user):
+
+  * Default (no marker files) -> single machine. The server listens only on
+    127.0.0.1, so there is NO Windows Firewall prompt. Opens a clean app
+    window; closing it shuts everything down.
+
+  * A file named ``SHARE-ON-NETWORK.txt`` next to the .exe -> this is the
+    MAIN (doctor's) PC. The server also listens on the local network so other
+    PCs in the clinic can share the same patient data. On first run Windows
+    asks once to allow it through the firewall (we also try to add the rule
+    automatically). The PC's network address is written to
+    ``THIS-PC-ADDRESS.txt`` so you know what to type on the nurse's PC.
+
+  * A file named ``CONNECT-TO.txt`` containing the main PC's address
+    (e.g. ``192.168.1.20``) -> this is a CLIENT (nurse's) PC. It does NOT run
+    a server; it just opens a clean window showing the main PC's data.
 """
 
 import os
@@ -20,11 +29,27 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-HOST = "127.0.0.1"
 PORT = 5000
-URL = f"http://{HOST}:{PORT}"
-
 WINDOW_TITLE = "Dr Mahmoud Risha Clinic"
+
+
+def _app_dir():
+    """Folder that holds the .exe (or this script when running from source)."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return BASE_DIR
+
+
+def _read_marker(name):
+    """Return the trimmed contents of a marker file next to the exe, or None."""
+    path = os.path.join(_app_dir(), name)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8-sig") as fh:
+            return fh.read().strip()
+    except Exception:
+        return ""
 
 
 def _port_is_open(host, port, timeout=1.0):
@@ -35,34 +60,67 @@ def _port_is_open(host, port, timeout=1.0):
         return False
 
 
-def _wait_until_up(timeout=40):
+def _wait_until_up(host, timeout=40):
     end = time.time() + timeout
     while time.time() < end:
-        if _port_is_open(HOST, PORT):
+        if _port_is_open(host, PORT):
             return True
         time.sleep(0.3)
     return False
 
 
-def _serve():
+def _lan_ip():
+    """Best-effort local network IP of this PC."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))  # no data is actually sent
+            return s.getsockname()[0]
+        finally:
+            s.close()
+    except Exception:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return "127.0.0.1"
+
+
+def _add_firewall_rule():
+    """Best-effort: allow inbound TCP 5000 so LAN clients can connect."""
+    if os.name != "nt":
+        return
+    import subprocess
+    cmd = [
+        "netsh", "advfirewall", "firewall", "add", "rule",
+        "name=Dr Risha Clinic", "dir=in", "action=allow",
+        "protocol=TCP", "localport=%d" % PORT,
+    ]
+    try:
+        subprocess.run(
+            cmd,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=10,
+        )
+    except Exception:
+        pass  # Not admin: Windows will show its own one-time allow prompt.
+
+
+def _serve(host):
     """Run the web server quietly in a background thread."""
     from app import app
 
-    # Silence the noisy Werkzeug/dev-server logging so nothing prints.
     import logging
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     try:
-        # waitress is a small, stable production server (no dev-server warning).
         from waitress import serve
-        serve(app, host=HOST, port=PORT, threads=8, _quiet=True)
+        serve(app, host=host, port=PORT, threads=8, _quiet=True)
     except Exception:
-        # Fallback to Flask's built-in server if waitress isn't available.
-        app.run(host=HOST, port=PORT, debug=False, use_reloader=False)
+        app.run(host=host, port=PORT, debug=False, use_reloader=False)
 
 
 def _find_app_browser():
-    """Return the path to Edge or Chrome, which support chromeless app mode."""
     candidates = [
         os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
         os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
@@ -77,18 +135,16 @@ def _find_app_browser():
 
 
 def _profile_dir():
-    """A private browser profile so the window is its own process we can wait on."""
+    path = os.path.join(_app_dir(), "browser")
     try:
-        from config import DATA_DIR
-        base = DATA_DIR
+        os.makedirs(path, exist_ok=True)
     except Exception:
-        base = BASE_DIR
-    path = os.path.join(base, "browser")
-    os.makedirs(path, exist_ok=True)
+        path = os.path.join(os.path.expanduser("~"), ".dr_risha_browser")
+        os.makedirs(path, exist_ok=True)
     return path
 
 
-def _open_app_window():
+def _open_app_window(url):
     """Open a clean, chromeless app window. Returns the process, or None."""
     import subprocess
 
@@ -98,53 +154,110 @@ def _open_app_window():
 
     args = [
         browser,
-        f"--app={URL}",
-        f"--user-data-dir={_profile_dir()}",
+        "--app=%s" % url,
+        "--user-data-dir=%s" % _profile_dir(),
         "--no-first-run",
         "--no-default-browser-check",
         "--window-size=1280,860",
     ]
-    creationflags = 0
-    if os.name == "nt":
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
     try:
         return subprocess.Popen(args, creationflags=creationflags)
     except Exception:
         return None
 
 
-def main():
-    already_running = _port_is_open(HOST, PORT)
-
-    if not already_running:
-        threading.Thread(target=_serve, daemon=True).start()
-        if not _wait_until_up():
-            # Server never came up; open whatever browser we can and give up.
-            import webbrowser
-            webbrowser.open(URL)
+def _message_box(text, title=WINDOW_TITLE):
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, text, title, 0x40)  # info icon
             return
+        except Exception:
+            pass
+    sys.stderr.write(text + "\n")
 
-    proc = _open_app_window()
 
+def _run_window_and_wait(url, keep_alive_if_no_browser):
+    """Open the app window and block until it is closed."""
+    proc = _open_app_window(url)
     if proc is not None:
-        # Wait until the doctor closes the app window, then exit so the
-        # background server thread is torn down with the process.
         try:
             proc.wait()
         except KeyboardInterrupt:
             pass
         return
 
-    # No Edge/Chrome found: fall back to the default browser. In this case we
-    # keep the server alive because we can't tell when the tab is closed.
     import webbrowser
-    webbrowser.open(URL)
-    if not already_running:
+    webbrowser.open(url)
+    if keep_alive_if_no_browser:
         try:
             while True:
                 time.sleep(3600)
         except KeyboardInterrupt:
             pass
+
+
+def _run_client(server_addr):
+    """Nurse's PC: connect to the main PC, no local server."""
+    # Use the first non-empty, non-comment line of CONNECT-TO.txt.
+    host = ""
+    for line in server_addr.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            host = line
+            break
+    host = host.replace("http://", "").replace("https://", "")
+    host = host.split("/")[0].split(":")[0].strip()
+    url = "http://%s:%d" % (host, PORT)
+
+    if not _port_is_open(host, PORT, timeout=3):
+        _message_box(
+            "Could not reach the main clinic PC at:\n\n    %s\n\n"
+            "Make sure the doctor's computer is turned on and the clinic app "
+            "is open on it, and that both PCs are on the same network."
+            % host
+        )
+        return
+    _run_window_and_wait(url, keep_alive_if_no_browser=True)
+
+
+def _run_server(share_on_network):
+    host = "0.0.0.0" if share_on_network else "127.0.0.1"
+
+    already_running = _port_is_open("127.0.0.1", PORT)
+    if not already_running:
+        if share_on_network:
+            _add_firewall_rule()
+            try:
+                with open(os.path.join(_app_dir(), "THIS-PC-ADDRESS.txt"), "w",
+                          encoding="utf-8") as fh:
+                    fh.write(
+                        "On the nurse's PC, put this address inside CONNECT-TO.txt:\n\n"
+                        "    %s\n\n(The nurse's PC and this PC must be on the "
+                        "same network / Wi-Fi.)\n" % _lan_ip()
+                    )
+            except Exception:
+                pass
+
+        threading.Thread(target=_serve, args=(host,), daemon=True).start()
+        if not _wait_until_up("127.0.0.1"):
+            import webbrowser
+            webbrowser.open("http://127.0.0.1:%d" % PORT)
+            return
+
+    _run_window_and_wait("http://127.0.0.1:%d" % PORT,
+                         keep_alive_if_no_browser=not already_running)
+
+
+def main():
+    connect_to = _read_marker("CONNECT-TO.txt")
+    if connect_to:
+        _run_client(connect_to)
+        return
+
+    share = _read_marker("SHARE-ON-NETWORK.txt") is not None
+    _run_server(share_on_network=share)
 
 
 if __name__ == "__main__":

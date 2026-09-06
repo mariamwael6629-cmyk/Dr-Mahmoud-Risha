@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <title>Dr Mahmoud Risha Rheumatology Clinic — Patient Management</title>
+<link rel="icon" type="image/png" href="/assets/rx-logo.png"/>
 <!-- Tailwind is bundled locally so the app is fully styled with no internet. -->
 <script src="/assets/tailwind.js"></script>
 <style>
@@ -1629,7 +1630,7 @@ function renderAddPatient(){
             </select></div>
           
           <div class="field-group"><label class="form-label">${t('mobileNum')} *</label>
-            <input class="form-input" type="tel" name="mobileNumber" required inputmode="tel" pattern="\\+?\\d[\\d\\s-]{6,15}" title="${t('invalidPhone')}" placeholder="01xxxxxxxxx" value="${esc(editingPt?editingPt.mobileNumber:'')}"/></div>
+            <input class="form-input" type="tel" name="mobileNumber" required inputmode="tel" title="${t('invalidPhone')}" placeholder="01xxxxxxxxx" value="${esc(editingPt?editingPt.mobileNumber:'')}"/></div>
         </div>
         <div class="section-label">${t('medHist')}</div>
         <div class="form-grid">

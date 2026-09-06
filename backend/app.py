@@ -15,6 +15,7 @@ import models  # noqa: F401
 from database.migrate import run_migrations
 from database.seed import seed_if_empty
 from routes import register_blueprints
+from security import init_auth
 
 
 def create_app():
@@ -26,7 +27,8 @@ def create_app():
 
     app.json.ensure_ascii = False
 
-    CORS(app)
+    CORS(app, supports_credentials=True)
+    init_auth(app)
     db.init_app(app)
     if not getattr(sys, "frozen", False):
         from flasgger import Swagger

@@ -1,12 +1,23 @@
+import re
+
 from flask import jsonify, request
 
 from services import patient_service
 
 REQUIRED_FIELDS = ["Name", "age", "gender", "mobileNumber"]
 
+# Accepts an optional leading + and 7–15 digits (spaces/dashes allowed as
+# separators). Rejects free text like "not-a-phone".
+_PHONE_RE = re.compile(r"^\+?\d[\d\s-]{6,15}$")
+
+
 def _validate(data):
     missing = [f for f in REQUIRED_FIELDS if not str(data.get(f, "")).strip()]
     return missing
+
+
+def _phone_ok(value):
+    return bool(_PHONE_RE.match(str(value or "").strip()))
 
 def list_patients():
     search = request.args.get("search", "").strip()
@@ -31,6 +42,8 @@ def create_patient():
     missing = _validate(data)
     if missing:
         return jsonify({"error": "Missing required fields", "fields": missing}), 400
+    if not _phone_ok(data.get("mobileNumber")):
+        return jsonify({"error": "invalid_mobile", "message": "Please enter a valid mobile number.", "fields": ["mobileNumber"]}), 400
 
     force = bool(data.pop("forceCreateDuplicate", False))
     try:
@@ -49,6 +62,8 @@ def update_patient(patient_id):
         return jsonify({"error": "Patient not found"}), 404
     data = request.get_json(force=True) or {}
     if "mobileNumber" in data:
+        if not _phone_ok(data.get("mobileNumber")):
+            return jsonify({"error": "invalid_mobile", "message": "Please enter a valid mobile number.", "fields": ["mobileNumber"]}), 400
         dup = patient_service.find_duplicate_by_mobile(data["mobileNumber"], exclude_id=patient_id)
         if dup:
             return jsonify({

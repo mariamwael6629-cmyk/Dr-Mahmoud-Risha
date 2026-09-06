@@ -13,6 +13,12 @@ def create_invoice():
     data = request.get_json(force=True) or {}
     if not data.get("patientId") or data.get("amount") is None:
         return jsonify({"error": "patientId and amount are required"}), 400
+    try:
+        amount = float(data.get("amount"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount must be a number"}), 400
+    if amount <= 0:
+        return jsonify({"error": "amount must be greater than zero"}), 400
     invoice = financial_service.create_invoice(data)
     return jsonify(invoice.to_dict()), 201
 

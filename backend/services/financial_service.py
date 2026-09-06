@@ -16,12 +16,16 @@ def get_invoice(invoice_id):
     return Invoice.query.get(invoice_id)
 
 def create_invoice(data):
+    amount = max(float(data.get("amount") or 0), 0)
+    # Amount paid can never be negative or exceed the invoice total, so the
+    # balance stays >= 0 and the status is always meaningful.
+    paid = min(max(float(data.get("paidAmount") or 0), 0), amount)
     invoice = Invoice(
         patient_id=int(data["patientId"]),
         appointment_id=int(data["appointmentId"]) if data.get("appointmentId") else None,
         description=data.get("description"),
-        amount=float(data.get("amount") or 0),
-        paid_amount=float(data.get("paidAmount") or 0),
+        amount=amount,
+        paid_amount=paid,
         date=data.get("date"),
     )
     db.session.add(invoice)
@@ -29,18 +33,25 @@ def create_invoice(data):
     return invoice
 
 def record_payment(invoice, amount):
-    invoice.paid_amount = (invoice.paid_amount or 0) + float(amount)
+    payment = max(float(amount), 0)
+    new_paid = (invoice.paid_amount or 0) + payment
+    # Never let the total paid exceed the invoice amount.
+    invoice.paid_amount = min(new_paid, invoice.amount or 0)
     db.session.commit()
     return invoice
 
 def update_invoice(invoice, data):
-    field_map = [
-        ("description", "description"), ("amount", "amount"),
-        ("paidAmount", "paid_amount"), ("date", "date"),
-    ]
-    for json_key, attr in field_map:
-        if json_key in data:
-            setattr(invoice, attr, data[json_key])
+    if "amount" in data:
+        invoice.amount = max(float(data["amount"] or 0), 0)
+    if "description" in data:
+        invoice.description = data["description"]
+    if "date" in data:
+        invoice.date = data["date"]
+    if "paidAmount" in data:
+        invoice.paid_amount = min(max(float(data["paidAmount"] or 0), 0), invoice.amount or 0)
+    else:
+        # Keep paid within the (possibly changed) amount.
+        invoice.paid_amount = min(invoice.paid_amount or 0, invoice.amount or 0)
     db.session.commit()
     return invoice
 

@@ -475,6 +475,8 @@ en:{
   checkupPriceLbl:'Check-up price', followupPriceLbl:'Follow-up price', consultationPriceLbl:'Consultation price',
   pricing:'Visit Prices', pricingSub:'Used to auto-calculate the daily income.', savePrices:'Save Prices', pricesSaved:'Prices saved.',
   todayIncome:"Today's Income", visitsCount:'visits', earnedLbl:'earned', totalToday:'Total today',
+  nextPatient:'Next Patient', viewCompleted:'Completed', backToQueue:'Back to Queue',
+  noWaitingPatients:'No patients waiting.', completedTitle:'Completed today',
   bookBtn:'Book Appointment', selectPtFirst:'Please select a patient.', apptBooked:'Appointment booked!',
   filterByDate:'Filter by Date', showAll:'Show All', upcomingAppts:'Appointments',
   reschedule:'Reschedule', apptRescheduled:'Appointment rescheduled.', cancelAppt:'Cancel Appointment',
@@ -633,6 +635,8 @@ ar:{
   checkupPriceLbl:'سعر الكشف', followupPriceLbl:'سعر الإعادة', consultationPriceLbl:'سعر الاستشارة',
   pricing:'أسعار الكشوفات', pricingSub:'تُستخدم لحساب دخل اليوم تلقائيًا.', savePrices:'حفظ الأسعار', pricesSaved:'تم حفظ الأسعار.',
   todayIncome:'دخل النهاردة', visitsCount:'زيارة', earnedLbl:'الإجمالي', totalToday:'إجمالي اليوم',
+  nextPatient:'المريض التالي', viewCompleted:'المكتمل', backToQueue:'رجوع للطابور',
+  noWaitingPatients:'مفيش مرضى في الانتظار.', completedTitle:'المكتمل النهاردة',
   bookBtn:'حجز الموعد', selectPtFirst:'يرجى اختيار مريض.', apptBooked:'تم حجز الموعد!',
   filterByDate:'تصفية بالتاريخ', showAll:'عرض الكل', upcomingAppts:'المواعيد',
   reschedule:'إعادة جدولة', apptRescheduled:'تم إعادة جدولة الموعد.', cancelAppt:'إلغاء الموعد',
@@ -766,7 +770,7 @@ const state = {
   
   bookingVisitType:'consultation', bookingDay:'', bookingList:[], bookingLoaded:false,
   bookingValidDays:[], bookingSlots:[], bookingSearch:'',
-  homeQueue:[], homeQueueLoaded:false, homeQuickAddOpen:false,
+  homeQueue:[], homeQueueLoaded:false, homeQuickAddOpen:false, homeView:'queue',
   clinicSettings:null, reps:[], repsLoaded:false, financialToday:null,
   role:'doctor',
   reportsData:null,
@@ -1187,6 +1191,24 @@ function homeQueueOrder(list){
   return list.slice().sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))||a.id-b.id);
 }
 
+function toggleHomeView(){
+  state.homeView = state.homeView==='completed' ? 'queue' : 'completed';
+  renderHome(); document.getElementById('page-home').style.display='';
+}
+async function callNextPatient(){
+  const list=homeQueueOrder(state.homeQueue).filter(a=>a.status!=='cancelled');
+  const current=list.find(a=>a.status==='in_consultation');
+  const waiting=list.filter(a=>a.status==='waiting'||a.status==='arrived');
+  const next=waiting[0];
+  if(!current && !next){ toast(t('noWaitingPatients'),'info'); return; }
+  try{
+    if(current) await apiPut(`/appointments/${current.id}`,{status:'completed'});
+    if(next) await apiPut(`/appointments/${next.id}`,{status:'in_consultation'});
+    await refreshQueuesAndPatients();
+    if(next) toast(`${t('nextPatient')}: ${esc(next.patientName||'')}`,'success');
+    else toast(t('noWaitingPatients'),'info');
+  }catch(err){ toast(err.message||'Failed to advance queue.','error'); }
+}
 function toggleHomeQuickAdd(){
   state.homeQuickAddOpen=!state.homeQuickAddOpen;
   renderHome();
@@ -1224,10 +1246,12 @@ function renderHome(){
   const completed=active.filter(a=>a.status==='completed');
   const current=active.find(a=>a.status==='in_consultation');
   const nextId=current?null:(waiting[0]?waiting[0].id:null);
+  const showCompleted=state.homeView==='completed';
+  const display=showCompleted?completed:active.filter(a=>a.status!=='completed');
 
-  const rowsHTML=active.length===0
-    ?`<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:2.2rem">${t('noBookingsToday')}</td></tr>`
-    :active.map((a,i)=>{
+  const rowsHTML=display.length===0
+    ?`<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:2.2rem">${showCompleted?t('noAppts'):t('noBookingsToday')}</td></tr>`
+    :display.map((a,i)=>{
       const isCurrent=a.status==='in_consultation';
       const isNext=a.id===nextId;
       const pIdx=patientIdxById(a.patientId);
@@ -1267,7 +1291,11 @@ function renderHome(){
         <div class="page-heading" style="margin-bottom:0.15rem">${t('outPatientTitle')}</div>
         <p class="page-sub" style="margin:0">${t('homeSub')} · ${esc(sessionDate)}</p>
       </div>
-      <button class="btn btn-primary" onclick="toggleHomeQuickAdd()">${t('quickAdd')}</button>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+        ${!showCompleted?`<button class="btn btn-primary" onclick="callNextPatient()">${t('nextPatient')}</button>`:''}
+        <button class="btn btn-ghost" onclick="toggleHomeView()">${showCompleted?t('backToQueue'):t('viewCompleted')+' ('+completed.length+')'}</button>
+        ${!showCompleted?`<button class="btn btn-primary" onclick="toggleHomeQuickAdd()">${t('quickAdd')}</button>`:''}
+      </div>
     </div>
     ${state.homeQuickAddOpen?`
     <div class="glass-card" style="padding:1.4rem;margin-top:1rem">
@@ -1294,7 +1322,7 @@ function renderHome(){
       <div class="stat-card glass-card"><div class="stat-num">${completed.length}</div><div class="stat-label">${t('completedTodayStat')}</div></div>
     </div>
     <div class="glass-card" style="padding:1.4rem">
-      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1rem">${t('todaysQueue')}</div>
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:1rem">${showCompleted?t('completedTitle'):t('todaysQueue')}</div>
       <div class="med-table-wrap"><table>
         <thead><tr style="background:var(--accent-deep)">
           <th style="color:#fff">${t('patientOrder')}</th><th style="color:#fff">${t('patNo')}</th><th style="color:#fff">${t('fullName')}</th>

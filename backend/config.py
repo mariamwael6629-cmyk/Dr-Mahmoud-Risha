@@ -8,9 +8,45 @@ from werkzeug.security import generate_password_hash
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(BASE_DIR)
 
+def _stable_data_dir():
+    """A FIXED per-user data location so patient data does not depend on
+    where the .exe happens to live. Moving, replacing or re-downloading the
+    program keeps the same database — the old "next to the exe" behaviour
+    made data appear to vanish when the exe was run from a new folder."""
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA") or os.path.join(
+            os.path.expanduser("~"), "AppData", "Local")
+    else:
+        base = os.path.expanduser("~")
+    return os.path.join(base, "DrRishaClinic")
+
+
+def _migrate_legacy_data(new_dir):
+    """One-time move of any older database that was stored next to the exe
+    (or in the source tree) into the new stable location, so upgrading users
+    keep their existing patients."""
+    try:
+        if os.path.exists(os.path.join(new_dir, "database", "clinic.db")):
+            return
+        candidates = []
+        if getattr(sys, "frozen", False):
+            candidates.append(os.path.join(os.path.dirname(sys.executable), "ClinicData"))
+        candidates.append(os.path.join(BASE_DIR, "database"))  # never matches new_dir
+        for legacy in candidates:
+            legacy_db = os.path.join(legacy, "database", "clinic.db")
+            if os.path.exists(legacy_db):
+                import shutil
+                os.makedirs(new_dir, exist_ok=True)
+                shutil.copytree(legacy, new_dir, dirs_exist_ok=True)
+                return
+    except Exception:
+        pass
+
+
 if getattr(sys, "frozen", False):
     STATIC_ROOT = sys._MEIPASS
-    DATA_DIR = os.path.join(os.path.dirname(sys.executable), "ClinicData")
+    DATA_DIR = _stable_data_dir()
+    _migrate_legacy_data(DATA_DIR)
 else:
     STATIC_ROOT = REPO_ROOT
     DATA_DIR = BASE_DIR

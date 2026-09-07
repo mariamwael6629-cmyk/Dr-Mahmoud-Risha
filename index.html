@@ -181,7 +181,7 @@ body.rtl #toast-container{right:auto;left:2rem;}
   padding:2rem 1rem;overflow-y:auto;animation:fadeIn .2s ease;}
 .detail-modal{background:rgba(255,255,255,.94);backdrop-filter:blur(20px);
   border:1px solid rgba(255,255,255,.82);border-radius:22px;padding:2.4rem;
-  max-width:1200px;width:96vw;min-height:calc(100vh - 4rem);box-shadow:0 24px 80px rgba(0,0,0,.14);
+  max-width:1050px;width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.14);
   animation:popIn .3s cubic-bezier(.34,1.4,.64,1) both;position:relative;}
 @media(max-width:680px){
   .detail-overlay{padding:0;}
@@ -1342,12 +1342,13 @@ async function openPatientDetail(idx){
         <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--accent-deep)">${esc(p.Name)}</div>
         <div style="font-size:0.8rem;color:#64748b"># ${esc(p.patientNumber)}</div>
       </div>
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('detail-appt-form').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('da-diag')&&document.getElementById('da-diag').focus(),300)">${t('addAppointmentBtn')}</button>
       <button class="btn btn-ghost btn-sm" onclick="startEditPatient(${idx})">${t('edit')}</button>
     </div>
     <div class="info-grid">${fields.map(([k,v])=>`<div class="info-item"><div class="info-key">${k}</div><div class="info-val">${v}</div></div>`).join('')}</div>
     <div class="section-label" style="margin-top:1.5rem">${t('medHistExtra')}</div>
     ${medHistExtraSummaryHTML(p)}
-    <div class="section-label" style="margin-top:1.5rem">${t('addAppointmentBtn')}</div>
+    <div id="detail-appt-form" class="section-label" style="margin-top:1.5rem">${t('addAppointmentBtn')}</div>
     ${detailApptFormHTML(p.id)}
     <div class="section-label" style="margin-top:1.5rem">${t('apptSec')}</div>
     ${apptsHTML}

@@ -768,6 +768,7 @@ const state = {
   bookingValidDays:[], bookingSlots:[], bookingSearch:'',
   homeQueue:[], homeQueueLoaded:false, homeQuickAddOpen:false,
   clinicSettings:null, reps:[], repsLoaded:false, financialToday:null,
+  role:'doctor',
   reportsData:null,
   settingsLoaded:false,
   activeTheme:'ocean',
@@ -910,14 +911,13 @@ function applyAutocompletePick(inputEl,kind,item){
 }
 
 async function loadInitialData(){
-  const [patientsRes,medsRes,brandingRes]=await Promise.allSettled([
-    apiGet('/patients?perPage=500'),
-    apiGet('/medications'),
-    apiGet('/settings/branding'),
-  ]);
+  const isDoctor=state.role==='doctor';
+  const calls=[apiGet('/patients?perPage=500'), apiGet('/medications')];
+  if(isDoctor) calls.push(apiGet('/settings/branding'));  // nurse has no access
+  const [patientsRes,medsRes,brandingRes]=await Promise.allSettled(calls);
   state.patients=patientsRes.status==='fulfilled'?patientsRes.value.items:[];
   state.medications=medsRes.status==='fulfilled'?medsRes.value:[];
-  state.clinicSettings=brandingRes.status==='fulfilled'?brandingRes.value:(state.clinicSettings||{});
+  if(brandingRes) state.clinicSettings=brandingRes.status==='fulfilled'?brandingRes.value:(state.clinicSettings||{});
   if(patientsRes.status==='rejected'||medsRes.status==='rejected'){
     toast('Some clinic data failed to load from the server.','error');
   }
@@ -951,8 +951,11 @@ function resolveConfirm(v){
 }
 
 const ALL_PAGES=['signIn','home','patients','addPatient','reps','prescription','booking','financial','settings'];
+const NURSE_PAGES=['home','booking','patients','reps'];
 
 function navigate(page){
+  // Enforce nurse role: block doctor-only pages.
+  if(state.role==='nurse' && page!=='signIn' && !NURSE_PAGES.includes(page)) page='home';
   ALL_PAGES.forEach(p=>{
     const el=document.getElementById(`page-${p}`);
     if(el) el.style.display='none';
@@ -992,7 +995,7 @@ function closeNav(){
 function buildNavLinks(activePage){
   document.getElementById('brand-el').textContent=t('brand');
 
-  const pages=[
+  let pages=[
     {id:'home',        label:()=>t('home'),         icon:icoHome()},
     {id:'addPatient',  label:()=>t('addPatient'),   icon:icoAddPt()},
     {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
@@ -1002,6 +1005,7 @@ function buildNavLinks(activePage){
     {id:'financial',   label:()=>t('financial'),    icon:icoFinancial()},
     {id:'settings',    label:()=>t('settings'),     icon:icoSettings()},
   ];
+  if(state.role==='nurse') pages=pages.filter(p=>NURSE_PAGES.includes(p.id));
   document.getElementById('nav-links-el').innerHTML = pages.map(p=>`
     <button class="nav-btn ${activePage===p.id?'active':''}" onclick="${p.id==='addPatient'?'cancelEditPatient_silent();':''}navigate('${p.id}')">
       ${p.icon} ${p.label()}
@@ -1148,6 +1152,7 @@ async function doSignIn(){
       body:JSON.stringify({username:u,password:p})});
   }catch(err){ toast(err.message||t('badCreds'),'error'); return; }
   if(!res.ok){ toast(t('badCreds'),'error'); document.getElementById('si-pass').value=''; return; }
+  try{ const data=await res.json(); state.role=data.role||'doctor'; }catch(e){ state.role='doctor'; }
   toast(t('welcome'),'success');
   markAuthenticated();
   document.getElementById('si-user').value='';
@@ -1334,8 +1339,36 @@ async function refreshQueuesAndPatients(){
 
 function genderLabel(g){ return g==='Male'?t('male'):g==='Female'?t('female'):'—'; }
 
+function openPatientDetailNurse(p){
+  const fields=[
+    [t('patNo'),esc(p.patientNumber)],[t('fullName'),esc(p.Name)],
+    [t('age'),esc(p.age==null?'—':p.age)],[t('gender'),genderLabel(p.gender)],
+    [t('mobileNum'),esc(p.mobileNumber||'—')],
+  ];
+  const appts=(p.appointments||[]);
+  const apptsHTML=appts.length===0
+    ?`<p style="color:#94a3b8;font-size:0.88rem;margin-top:0.5rem">${t('noAppts')}</p>`
+    :appts.map(a=>`<div class="appt-item" style="margin-top:0.6rem"><div class="appt-date">${icoCalendar()} ${esc(a.date||'—')}${a.time?' '+esc(a.time):''} — ${visitTypeLabel(a.visitType)} · <span style="color:${statusColor(a.status)};font-weight:700">${statusLabel(a.status)}</span></div></div>`).join('');
+  document.getElementById('detail-modal').innerHTML=`
+    <button class="close-btn" onclick="closeDetail()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+    </button>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.3rem;flex-wrap:wrap">
+      <div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--bg-3),var(--bg-4));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--accent-deep)">${esc(p.Name.charAt(0))}</div>
+      <div style="flex:1">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--accent-deep)">${esc(p.Name)}</div>
+        <div style="font-size:0.8rem;color:#64748b"># ${esc(p.patientNumber)}</div>
+      </div>
+    </div>
+    <div class="info-grid">${fields.map(([k,v])=>`<div class="info-item"><div class="info-key">${k}</div><div class="info-val">${v}</div></div>`).join('')}</div>
+    <div class="section-label" style="margin-top:1.5rem">${currentLang==='ar'?'المواعيد':'Appointments'}</div>
+    ${apptsHTML}`;
+  document.getElementById('detail-overlay').style.display='flex';
+}
+
 async function openPatientDetail(idx){
   const p=state.patients[idx]; if(!p) return;
+  if(state.role==='nurse'){ openPatientDetailNurse(p); return; }
   const rxHistoryRes=await Promise.allSettled([apiGet(`/patients/${p.id}/prescriptions`)]);
   const rxHistory=rxHistoryRes[0].status==='fulfilled'?rxHistoryRes[0].value:[];
   const fields=[
@@ -3108,7 +3141,7 @@ async function bootApp(){
   if(checkRuntimeEnvironment()) return;
   startLiveSync();
   let authed=false;
-  try{ const me=await apiGet('/auth/me'); authed=!!me.authenticated; }catch(err){ authed=false; }
+  try{ const me=await apiGet('/auth/me'); authed=!!me.authenticated; if(authed) state.role=me.role||'doctor'; }catch(err){ authed=false; }
   if(authed){
     markAuthenticated();
     await loadInitialData();

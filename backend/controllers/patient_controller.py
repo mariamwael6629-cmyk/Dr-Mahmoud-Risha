@@ -3,6 +3,7 @@ import re
 from flask import jsonify, request
 
 from services import patient_service
+from security import sanitize_patient, current_role
 
 REQUIRED_FIELDS = ["Name", "age", "gender", "mobileNumber"]
 
@@ -24,8 +25,9 @@ def list_patients():
     page = int(request.args.get("page", 1))
     per_page = min(int(request.args.get("perPage", 50)), 200)
     items, total = patient_service.list_patients(search=search or None, page=page, per_page=per_page)
+    role = current_role()
     return jsonify({
-        "items": [p.to_dict() for p in items],
+        "items": [sanitize_patient(p.to_dict(), role) for p in items],
         "total": total,
         "page": page,
         "perPage": per_page,
@@ -35,7 +37,7 @@ def get_patient(patient_id):
     patient = patient_service.get_patient(patient_id)
     if not patient:
         return jsonify({"error": "Patient not found"}), 404
-    return jsonify(patient.to_dict())
+    return jsonify(sanitize_patient(patient.to_dict(), current_role()))
 
 def create_patient():
     data = request.get_json(force=True) or {}

@@ -117,13 +117,23 @@ branding settings (see [Test/seed data](#-testseed-data) below).
 - App (frontend + API, same origin): **http://127.0.0.1:5000/**
 - Interactive API docs (Swagger UI): **http://127.0.0.1:5000/apidocs**
 
-Sign in with username `Risha` / password `Risha12345` (the default clinic
-credentials). Authentication is enforced **server-side**: every `/api/*`
-endpoint requires a valid login session, so patient data is not reachable
-without signing in. To change the credentials, set the `CLINIC_USERNAME` and
-`CLINIC_PASSWORD` environment variables before starting the backend (the
-password is stored only as a hash). A stable session secret is kept in
-`secret_key.txt` next to the data so logins survive restarts.
+There are two accounts with different permissions:
+
+- **Doctor** — full access. Default `Risha` / `Risha12345`
+  (override with `CLINIC_USERNAME` / `CLINIC_PASSWORD`).
+- **Nurse** — reception only: today's queue, bookings, basic patient info
+  (name / number / age / gender / mobile) and medical reps. The nurse can
+  **not** see any medical data (diagnosis, symptoms, drugs, tests, history,
+  prescriptions), the financial pages, or the settings/backup. Default
+  `Nurse` / `Nurse12345` (override with `CLINIC_NURSE_USERNAME` /
+  `CLINIC_NURSE_PASSWORD`).
+
+Authentication and the role limits are enforced **server-side**: every
+`/api/*` endpoint requires a valid login session, and restricted data never
+leaves the doctor's PC even for a logged-in nurse. Passwords are stored only
+as hashes. A stable session secret is kept in `secret_key.txt` next to the
+data so logins survive restarts. On the nurse's PC (the CONNECT-TO client),
+just sign in with the Nurse account.
 
 ### 4. Use it from another device on the same LAN
 

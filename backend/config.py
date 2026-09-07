@@ -93,6 +93,11 @@ AUTH_USERNAME = os.environ.get("CLINIC_USERNAME", "Risha")
 _AUTH_PASSWORD = os.environ.get("CLINIC_PASSWORD", "Risha12345")
 AUTH_PASSWORD_HASH = generate_password_hash(_AUTH_PASSWORD)
 
+# Nurse account — limited role (no medical data, no financial, no settings).
+NURSE_USERNAME = os.environ.get("CLINIC_NURSE_USERNAME", "Nurse")
+_NURSE_PASSWORD = os.environ.get("CLINIC_NURSE_PASSWORD", "Nurse12345")
+NURSE_PASSWORD_HASH = generate_password_hash(_NURSE_PASSWORD)
+
 
 class Config:
     SECRET_KEY = _load_or_create_secret_key()

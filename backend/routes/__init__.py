@@ -11,6 +11,7 @@ from routes.settings import settings_bp
 from routes.availability import availability_bp
 from routes.financial import financial_bp
 from routes.reports import reports_bp
+from routes.reps import reps_bp
 
 ALL_BLUEPRINTS = (
     auth_bp,
@@ -26,6 +27,7 @@ ALL_BLUEPRINTS = (
     availability_bp,
     financial_bp,
     reports_bp,
+    reps_bp,
 )
 
 

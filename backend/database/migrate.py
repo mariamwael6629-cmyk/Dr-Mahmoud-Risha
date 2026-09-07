@@ -22,6 +22,11 @@ NEW_COLUMNS = {
     "patients": [
         ("medical_history_extra", "TEXT"),
     ],
+    "clinic_settings": [
+        ("checkup_price", "FLOAT DEFAULT 0"),
+        ("followup_price", "FLOAT DEFAULT 0"),
+        ("consultation_price", "FLOAT DEFAULT 0"),
+    ],
 }
 
 

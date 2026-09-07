@@ -8,6 +8,7 @@ from models.prescription import Prescription
 from models.settings import ClinicSettings
 from models.availability import DoctorAvailability
 from models.financial import Invoice
+from models.rep import MedicalRep
 
 __all__ = [
     "Patient",
@@ -22,4 +23,5 @@ __all__ = [
     "ClinicSettings",
     "DoctorAvailability",
     "Invoice",
+    "MedicalRep",
 ]

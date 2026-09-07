@@ -350,6 +350,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   <div id="page-patients"     style="display:none"></div>
   <div id="page-addPatient"   style="display:none"></div>
   <div id="page-medications"  style="display:none"></div>
+  <div id="page-reps"         style="display:none"></div>
   <div id="page-prescription" style="display:none"></div>
   <div id="page-booking"      style="display:none"></div>
   <div id="page-financial"    style="display:none"></div>
@@ -466,6 +467,14 @@ en:{
   booking:'Booking', bookingTitle:'Appointment Booking', bookingSub:'Book, reschedule and review appointments',
   bookNewAppt:'Book New Appointment', visitType:'Visit Type', apptTime:'Time',
   visitTypeConsult:'Check-up', visitTypeFollowUp:'Follow-up', visitTypeProcedure:'Procedure', visitTypeOther:'Other', minutesAbbrev:'min',
+  visitTypeEstisharah:'Consultation',
+  reps:'Reps', repsTitle:'Medical Reps', repsSub:'Pharma sales reps who visit the clinic',
+  repName:'Rep name', repPhone:'Phone', repCompany:'Company', repDrug:'Drug', repNotes:'Notes',
+  addRep:'Add Rep', repAdded:'Rep added.', repDeleted:'Rep deleted.', noReps:'No reps added yet.',
+  quickAdd:'+ Add Patient / Booking', quickAddTitle:'Quick add to today', addToToday:'Add to today',
+  checkupPriceLbl:'Check-up price', followupPriceLbl:'Follow-up price', consultationPriceLbl:'Consultation price',
+  pricing:'Visit Prices', pricingSub:'Used to auto-calculate the daily income.', savePrices:'Save Prices', pricesSaved:'Prices saved.',
+  todayIncome:"Today's Income", visitsCount:'visits', earnedLbl:'earned', totalToday:'Total today',
   bookBtn:'Book Appointment', selectPtFirst:'Please select a patient.', apptBooked:'Appointment booked!',
   filterByDate:'Filter by Date', showAll:'Show All', upcomingAppts:'Appointments',
   reschedule:'Reschedule', apptRescheduled:'Appointment rescheduled.', cancelAppt:'Cancel Appointment',
@@ -616,6 +625,14 @@ ar:{
   booking:'الحجز', bookingTitle:'حجز المواعيد', bookingSub:'حجز وإعادة جدولة ومراجعة المواعيد',
   bookNewAppt:'حجز موعد جديد', visitType:'نوع الزيارة', apptTime:'الوقت',
   visitTypeConsult:'كشف', visitTypeFollowUp:'مراجعة', visitTypeProcedure:'إجراء طبي', visitTypeOther:'أخرى', minutesAbbrev:'د',
+  visitTypeEstisharah:'استشارة',
+  reps:'مناديب الأدوية', repsTitle:'مناديب الأدوية', repsSub:'مناديب شركات الأدوية اللي بيزوروا العيادة',
+  repName:'اسم المندوب', repPhone:'رقم التليفون', repCompany:'الشركة', repDrug:'الدواء', repNotes:'ملاحظات',
+  addRep:'إضافة مندوب', repAdded:'تم إضافة المندوب.', repDeleted:'تم حذف المندوب.', noReps:'لا يوجد مناديب بعد.',
+  quickAdd:'+ إضافة مريض / حجز', quickAddTitle:'إضافة سريعة لليوم', addToToday:'إضافة لليوم',
+  checkupPriceLbl:'سعر الكشف', followupPriceLbl:'سعر الإعادة', consultationPriceLbl:'سعر الاستشارة',
+  pricing:'أسعار الكشوفات', pricingSub:'تُستخدم لحساب دخل اليوم تلقائيًا.', savePrices:'حفظ الأسعار', pricesSaved:'تم حفظ الأسعار.',
+  todayIncome:'دخل النهاردة', visitsCount:'زيارة', earnedLbl:'الإجمالي', totalToday:'إجمالي اليوم',
   bookBtn:'حجز الموعد', selectPtFirst:'يرجى اختيار مريض.', apptBooked:'تم حجز الموعد!',
   filterByDate:'تصفية بالتاريخ', showAll:'عرض الكل', upcomingAppts:'المواعيد',
   reschedule:'إعادة جدولة', apptRescheduled:'تم إعادة جدولة الموعد.', cancelAppt:'إلغاء الموعد',
@@ -749,7 +766,8 @@ const state = {
   
   bookingVisitType:'consultation', bookingDay:'', bookingList:[], bookingLoaded:false,
   bookingValidDays:[], bookingSlots:[], bookingSearch:'',
-  homeQueue:[], homeQueueLoaded:false,
+  homeQueue:[], homeQueueLoaded:false, homeQuickAddOpen:false,
+  clinicSettings:null, reps:[], repsLoaded:false, financialToday:null,
   reportsData:null,
   settingsLoaded:false,
   activeTheme:'ocean',
@@ -892,12 +910,14 @@ function applyAutocompletePick(inputEl,kind,item){
 }
 
 async function loadInitialData(){
-  const [patientsRes,medsRes]=await Promise.allSettled([
+  const [patientsRes,medsRes,brandingRes]=await Promise.allSettled([
     apiGet('/patients?perPage=500'),
     apiGet('/medications'),
+    apiGet('/settings/branding'),
   ]);
   state.patients=patientsRes.status==='fulfilled'?patientsRes.value.items:[];
   state.medications=medsRes.status==='fulfilled'?medsRes.value:[];
+  state.clinicSettings=brandingRes.status==='fulfilled'?brandingRes.value:(state.clinicSettings||{});
   if(patientsRes.status==='rejected'||medsRes.status==='rejected'){
     toast('Some clinic data failed to load from the server.','error');
   }
@@ -930,7 +950,7 @@ function resolveConfirm(v){
   if(_cr){_cr(v);_cr=null;}
 }
 
-const ALL_PAGES=['signIn','home','patients','addPatient','medications','prescription','booking','financial','settings'];
+const ALL_PAGES=['signIn','home','patients','addPatient','reps','prescription','booking','financial','settings'];
 
 function navigate(page){
   ALL_PAGES.forEach(p=>{
@@ -978,7 +998,7 @@ function buildNavLinks(activePage){
     {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
     {id:'patients',    label:()=>t('patients'),     icon:icoDoctor()},
     {id:'prescription',label:()=>t('prescription'), icon:icoRx()},
-    {id:'medications', label:()=>t('medications'),  icon:icoMed()},
+    {id:'reps',        label:()=>t('reps'),         icon:icoMed()},
     {id:'financial',   label:()=>t('financial'),    icon:icoFinancial()},
     {id:'settings',    label:()=>t('settings'),     icon:icoSettings()},
   ];
@@ -997,6 +1017,7 @@ function renderPage(page){
   else if(page==='patients')    renderPatients();
   else if(page==='addPatient')  renderAddPatient();
   else if(page==='medications') renderMedications();
+  else if(page==='reps')        renderReps();
   else if(page==='prescription')renderPrescription();
   else if(page==='booking')     renderBooking();
   else if(page==='financial')   renderFinancial();
@@ -1161,6 +1182,29 @@ function homeQueueOrder(list){
   return list.slice().sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))||a.id-b.id);
 }
 
+function toggleHomeQuickAdd(){
+  state.homeQuickAddOpen=!state.homeQuickAddOpen;
+  renderHome();
+  document.getElementById('page-home').style.display='';
+  if(state.homeQuickAddOpen) setTimeout(()=>{const el=document.getElementById('qa-name'); if(el) el.focus();},60);
+}
+async function quickAddBooking(){
+  const name=document.getElementById('qa-name').value.trim();
+  const age=document.getElementById('qa-age').value;
+  const gender=document.getElementById('qa-gender').value;
+  const mobile=document.getElementById('qa-phone').value.trim();
+  const visitType=document.getElementById('qa-type').value;
+  if(!name){ toast(t('fillFields'),'error'); return; }
+  if(mobile && !isValidPhone(mobile)){ toast(t('invalidPhone'),'error'); return; }
+  try{
+    const res=await apiPost('/appointments/book',{name,mobileNumber:mobile,age,gender,visitType,today:true,date:todayISO()});
+    toast(`${t('apptBooked')} — ${res.time||''}`,'success');
+    state.homeQuickAddOpen=false;
+    try{ const pr=await apiGet('/patients?perPage=500'); state.patients=pr.items; }catch(e){}
+    await fetchHomeQueue();
+  }catch(err){ toast(err.message||t('fillFields'),'error'); }
+}
+
 function patientIdxById(id){ return state.patients.findIndex(p=>p.id===id); }
 
 function renderHome(){
@@ -1218,7 +1262,27 @@ function renderHome(){
         <div class="page-heading" style="margin-bottom:0.15rem">${t('outPatientTitle')}</div>
         <p class="page-sub" style="margin:0">${t('homeSub')} · ${esc(sessionDate)}</p>
       </div>
+      <button class="btn btn-primary" onclick="toggleHomeQuickAdd()">${t('quickAdd')}</button>
     </div>
+    ${state.homeQuickAddOpen?`
+    <div class="glass-card" style="padding:1.4rem;margin-top:1rem">
+      <div style="font-weight:700;font-size:0.95rem;color:var(--accent-deep);margin-bottom:0.9rem">${t('quickAddTitle')}</div>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label" for="qa-name">${t('fullName')} *</label>
+          <input class="form-input" id="qa-name" onkeydown="if(event.key==='Enter')quickAddBooking()"/></div>
+        <div class="field-group"><label class="form-label" for="qa-age">${t('age')}</label>
+          <input class="form-input" type="number" min="0" max="150" id="qa-age"/></div>
+        <div class="field-group"><label class="form-label" for="qa-gender">${t('gender')}</label>
+          <select class="form-input" id="qa-gender"><option value="Male">${t('male')}</option><option value="Female">${t('female')}</option></select></div>
+        <div class="field-group"><label class="form-label" for="qa-phone">${t('mobileNum')}</label>
+          <input class="form-input" type="tel" inputmode="tel" id="qa-phone" placeholder="01xxxxxxxxx"/></div>
+        <div class="field-group"><label class="form-label" for="qa-type">${t('visitType')}</label>
+          <select class="form-input" id="qa-type">${VISIT_TYPES.map(vt=>`<option value="${vt}">${visitTypeLabel(vt)}</option>`).join('')}</select></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:0.8rem">
+        <button class="btn btn-primary" onclick="quickAddBooking()">${t('addToToday')}</button>
+      </div>
+    </div>`:''}
     <div class="stats-row">
       <div class="stat-card glass-card"><div class="stat-num">${active.length}</div><div class="stat-label">${t('bookedToday')}</div></div>
       <div class="stat-card glass-card"><div class="stat-num">${waiting.length}</div><div class="stat-label">${t('waitingNow')}</div></div>
@@ -2255,10 +2319,10 @@ function openRxPrintWindow(content){
   setTimeout(()=>win.print(),500);
 }
 
-const VISIT_TYPES=['consultation','followUp'];
-const VISIT_TYPE_DURATIONS={consultation:15,followUp:10};
+const VISIT_TYPES=['consultation','followUp','estisharah'];
+const VISIT_TYPE_DURATIONS={consultation:15,followUp:10,estisharah:20};
 function visitTypeLabel(vt){
-  const map={consultation:t('visitTypeConsult'),followUp:t('visitTypeFollowUp')};
+  const map={consultation:t('visitTypeConsult'),followUp:t('visitTypeFollowUp'),estisharah:t('visitTypeEstisharah')};
   return map[vt]||vt||'—';
 }
 function visitTypeLabelWithDuration(vt){
@@ -2551,10 +2615,94 @@ async function removeMedication(i){
   }catch(err){ toast(err.message||'Failed to delete medication.','error'); }
 }
 
+async function fetchReps(){
+  try{ state.reps=await apiGet('/reps'); }catch(e){ state.reps=[]; }
+  state.repsLoaded=true;
+  if(state.currentPage==='reps'){ renderReps(); document.getElementById('page-reps').style.display=''; }
+}
+function renderReps(){
+  if(!state.repsLoaded){
+    document.getElementById('page-reps').innerHTML=`<div class="page"><div class="page-heading">${t('repsTitle')}</div><p class="page-sub">${t('loading')}</p></div>`;
+    fetchReps(); return;
+  }
+  const rows = state.reps.length===0
+    ? `<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:2rem">${t('noReps')}</td></tr>`
+    : state.reps.map(r=>`
+      <tr>
+        <td>${esc(r.company||'—')}</td>
+        <td>${esc(r.drug||'—')}</td>
+        <td>${esc(r.name||'—')}</td>
+        <td>${esc(r.phone||'—')}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteRep(${r.id})">${t('del')}</button></td>
+      </tr>`).join('');
+  document.getElementById('page-reps').innerHTML=`
+  <div class="page">
+    <div class="page-heading">${t('repsTitle')}</div>
+    <p class="page-sub">${t('repsSub')}</p>
+    <div class="glass-card" style="padding:1.8rem;margin-bottom:1.4rem">
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label">${t('repCompany')}</label><input class="form-input" id="rep-company" aria-label="${t('repCompany')}"/></div>
+        <div class="field-group"><label class="form-label">${t('repDrug')}</label><input class="form-input" id="rep-drug" aria-label="${t('repDrug')}"/></div>
+        <div class="field-group"><label class="form-label">${t('repName')}</label><input class="form-input" id="rep-name" aria-label="${t('repName')}"/></div>
+        <div class="field-group"><label class="form-label">${t('repPhone')}</label><input class="form-input" id="rep-phone" type="tel" inputmode="tel" aria-label="${t('repPhone')}"/></div>
+      </div>
+      <div class="field-group" style="margin-top:.6rem"><label class="form-label">${t('repNotes')}</label><input class="form-input" id="rep-notes" aria-label="${t('repNotes')}"/></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:.8rem"><button class="btn btn-primary" onclick="addRep()">${t('addRep')}</button></div>
+    </div>
+    <div class="glass-card" style="padding:1.4rem">
+      <div class="med-table-wrap"><table>
+        <thead><tr>
+          <th>${t('repCompany')}</th><th>${t('repDrug')}</th><th>${t('repName')}</th><th>${t('repPhone')}</th><th>${t('actions')}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+async function addRep(){
+  const company=document.getElementById('rep-company').value.trim();
+  const drug=document.getElementById('rep-drug').value.trim();
+  const name=document.getElementById('rep-name').value.trim();
+  const phone=document.getElementById('rep-phone').value.trim();
+  const notes=document.getElementById('rep-notes').value.trim();
+  if(!company&&!drug&&!name&&!phone){ toast(t('fillFields'),'error'); return; }
+  try{
+    const rec=await apiPost('/reps',{company,drug,name,phone,notes});
+    state.reps.unshift(rec);
+    toast(t('repAdded'),'success');
+    renderReps(); document.getElementById('page-reps').style.display='';
+  }catch(err){ toast(err.message||'Failed to add rep.','error'); }
+}
+async function deleteRep(id){
+  const ok=await showConfirm(t('confirmDel'),t('confirmDelMsg')); if(!ok) return;
+  try{
+    await apiDelete('/reps/'+id);
+    state.reps=state.reps.filter(r=>r.id!==id);
+    toast(t('repDeleted'),'info');
+    renderReps(); document.getElementById('page-reps').style.display='';
+  }catch(err){ toast(err.message||'Failed to delete rep.','error'); }
+}
+
+function computeTodayIncome(todayAppts){
+  const s=state.clinicSettings||{};
+  const price={consultation:Number(s.checkupPrice)||0,followUp:Number(s.followupPrice)||0,estisharah:Number(s.consultationPrice)||0};
+  const res={};
+  let totalCount=0,totalMoney=0;
+  ['consultation','followUp','estisharah'].forEach(vt=>{
+    const list=todayAppts.filter(a=>a.status!=='cancelled'&&(a.visitType||'consultation')===vt);
+    const count=list.length, money=count*(price[vt]||0);
+    res[vt]={count,money};
+    totalCount+=count; totalMoney+=money;
+  });
+  res.total={count:totalCount,money:totalMoney};
+  return res;
+}
 async function fetchFinancialData(){
-  const [invoicesRes,summaryRes]=await Promise.allSettled([apiGet('/financial/invoices'),apiGet('/financial/summary')]);
+  const [invoicesRes,summaryRes,todayRes]=await Promise.allSettled([
+    apiGet('/financial/invoices'),apiGet('/financial/summary'),apiGet(`/appointments?date=${todayISO()}`)]);
   state.invoiceList=invoicesRes.status==='fulfilled'?invoicesRes.value:[];
   state.invoiceSummary=summaryRes.status==='fulfilled'?summaryRes.value:null;
+  state.financialToday=computeTodayIncome(todayRes.status==='fulfilled'?todayRes.value:[]);
   if(invoicesRes.status==='rejected'||summaryRes.status==='rejected'){
     toast('Some financial data failed to load.','error');
   }
@@ -2600,11 +2748,28 @@ function renderFinancial(){
   }
   const s=state.invoiceSummary||{totalBilled:0,totalCollected:0,totalOutstanding:0};
   const ptOptions=state.patients.map(p=>`<option value="${p.id}">${esc(p.Name)} — #${esc(p.patientNumber)}</option>`).join('');
+  const ft=state.financialToday||computeTodayIncome([]);
+  const incomeTile=(vt)=>`
+    <div class="stat-card glass-card">
+      <div class="stat-num">${(ft[vt].money||0).toFixed(2)}</div>
+      <div class="stat-label">${visitTypeLabel(vt)} · ${ft[vt].count} ${t('visitsCount')}</div>
+    </div>`;
 
   document.getElementById('page-financial').innerHTML=`
   <div class="page">
     <div class="page-heading">${t('financialTitle')}</div>
     <p class="page-sub">${t('financialSub')}</p>
+    <div style="font-weight:700;font-size:0.95rem;color:var(--accent-deep);margin:0.4rem 0 0.6rem">${t('todayIncome')}</div>
+    <div class="stats-row">
+      ${incomeTile('consultation')}
+      ${incomeTile('followUp')}
+      ${incomeTile('estisharah')}
+      <div class="stat-card glass-card" style="background:rgba(var(--accent-rgb),.08)">
+        <div class="stat-num">${(ft.total.money||0).toFixed(2)}</div>
+        <div class="stat-label">${t('totalToday')} · ${ft.total.count} ${t('visitsCount')}</div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:0.95rem;color:var(--accent-deep);margin:1.2rem 0 0.6rem">${t('invoices')}</div>
     <div class="stats-row">
       <div class="stat-card glass-card"><div class="stat-num">${s.totalBilled.toFixed(2)}</div><div class="stat-label">${t('totalBilled')}</div></div>
       <div class="stat-card glass-card"><div class="stat-num">${s.totalCollected.toFixed(2)}</div><div class="stat-label">${t('totalCollected')}</div></div>
@@ -2766,6 +2931,19 @@ function renderSettings(){
       </div>
     </div>
     <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
+      <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.3rem">${t('pricing')}</div>
+      <p class="page-sub" style="margin:0 0 1.2rem">${t('pricingSub')}</p>
+      <div class="form-grid">
+        <div class="field-group"><label class="form-label" for="set-checkup">${t('checkupPriceLbl')}</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="set-checkup" value="${esc((state.clinicSettings&&state.clinicSettings.checkupPrice)||0)}"/></div>
+        <div class="field-group"><label class="form-label" for="set-followup">${t('followupPriceLbl')}</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="set-followup" value="${esc((state.clinicSettings&&state.clinicSettings.followupPrice)||0)}"/></div>
+        <div class="field-group"><label class="form-label" for="set-consult">${t('consultationPriceLbl')}</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="set-consult" value="${esc((state.clinicSettings&&state.clinicSettings.consultationPrice)||0)}"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:.8rem"><button class="btn btn-primary" onclick="saveClinicPrices()">${t('savePrices')}</button></div>
+    </div>
+    <div class="glass-card" style="padding:2rem;margin-bottom:1.5rem">
       <div style="font-weight:700;font-size:1rem;color:var(--accent-deep);margin-bottom:.3rem">${t('appearance')}</div>
       <p class="page-sub" style="margin:0 0 1.2rem">${t('appearanceSub')}</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.9rem">
@@ -2786,6 +2964,18 @@ function renderSettings(){
   </div>`;
 }
 
+async function saveClinicPrices(){
+  const payload={
+    checkupPrice:document.getElementById('set-checkup').value||0,
+    followupPrice:document.getElementById('set-followup').value||0,
+    consultationPrice:document.getElementById('set-consult').value||0,
+  };
+  try{
+    const updated=await apiPut('/settings/branding',payload);
+    state.clinicSettings=updated;
+    toast(t('pricesSaved'),'success');
+  }catch(err){ toast(err.message||'Failed to save prices.','error'); }
+}
 async function generateMonthlyReport(){
   let data;
   try{ data=await apiGet('/reports/monthly'); }
@@ -2882,15 +3072,35 @@ function startLiveSync(){
   if(liveSyncTimer) clearInterval(liveSyncTimer);
   liveSyncTimer=setInterval(liveSyncTick,60000);
 }
+function _userIsInteracting(){
+  const ae=document.activeElement;
+  if(ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return true;
+  for(const id of ['detail-overlay','confirm-overlay']){
+    const el=document.getElementById(id);
+    if(el && getComputedStyle(el).display!=='none') return true;
+  }
+  if(state.homeQuickAddOpen) return true;
+  return false;
+}
+function _silentRerender(fn){
+  const y=window.scrollY, x=window.scrollX;
+  fn();
+  window.scrollTo(x,y);   // keep the view exactly where it was — no jump/flicker
+}
 async function liveSyncTick(){
   if(!isAuthenticated()||state.currentPage==='signIn') return;
-  try{
-    const res=await apiGet('/patients?perPage=500');
-    state.patients=res.items;
-  }catch(err){ return; }
-  if(state.currentPage==='home'){ await fetchHomeQueue(); }
-  else if(state.currentPage==='patients'){ renderPatients(); }
-  else if(state.currentPage==='booking'&&state.bookingLoaded){ await loadBookingDay(); }
+  if(_userIsInteracting()) return;  // never disturb the user mid-action
+  let items;
+  try{ const res=await apiGet('/patients?perPage=500'); items=res.items; }catch(err){ return; }
+  state.patients=items;
+  if(_userIsInteracting()) return;  // re-check after the network wait
+  if(state.currentPage==='home'){
+    try{ state.homeQueue=await apiGet(`/appointments?date=${todayISO()}`); }catch(e){}
+    state.homeQueueLoaded=true;
+    if(!_userIsInteracting()) _silentRerender(()=>{ renderHome(); document.getElementById('page-home').style.display=''; });
+  } else if(state.currentPage==='patients'){
+    _silentRerender(()=>{ renderPatients(); document.getElementById('page-patients').style.display=''; });
+  }
 }
 
 async function bootApp(){

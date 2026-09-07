@@ -27,10 +27,19 @@ def update_branding(data):
         ("address1", "address_1"), ("address2", "address_2"),
         ("phone1", "phone_1"), ("phone2", "phone_2"),
         ("footerNoteAr", "footer_note_ar"),
+        ("checkupPrice", "checkup_price"), ("followupPrice", "followup_price"),
+        ("consultationPrice", "consultation_price"),
     ]
+    _price_keys = {"checkupPrice", "followupPrice", "consultationPrice"}
     for json_key, attr in field_map:
         if json_key in data:
-            setattr(settings, attr, data[json_key])
+            value = data[json_key]
+            if json_key in _price_keys:
+                try:
+                    value = max(float(value or 0), 0)
+                except (TypeError, ValueError):
+                    value = 0
+            setattr(settings, attr, value)
     db.session.commit()
     return settings
 

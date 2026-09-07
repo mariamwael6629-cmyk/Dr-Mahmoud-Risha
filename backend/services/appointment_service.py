@@ -159,7 +159,7 @@ def resolve_slot(date_str, time_str, visit_type):
             return date_str, slots[0]
     return next_available_slot(visit_type)
 
-def _find_or_create_patient(name, mobile_number):
+def _find_or_create_patient(name, mobile_number, age=None, gender=None):
     if mobile_number:
         existing = patient_service.find_duplicate_by_mobile(mobile_number)
         if existing:
@@ -168,6 +168,8 @@ def _find_or_create_patient(name, mobile_number):
         patient_number=patient_service.next_patient_number(),
         name=name,
         mobile_number=mobile_number or None,
+        age=age if age not in (None, "") else None,
+        gender=gender or None,
     )
     db.session.add(patient)
     db.session.flush()
@@ -183,11 +185,19 @@ def book_walkin(data):
     date_str = None if nearest else (data.get("date") or None)
     time_str = None if nearest else (data.get("time") or None)
 
-    booking_date, booking_time = resolve_slot(date_str, time_str, visit_type)
-    if not booking_date or not booking_time:
-        raise ValueError("No available slot could be found.")
+    if data.get("today"):
+        # Walk-in: always goes into TODAY's queue regardless of the clinic-day
+        # schedule. Use the date the client considers "today" (the browser and
+        # server can be in different timezones) so it lands in the visible queue.
+        import datetime as _dt
+        booking_date = (data.get("date") or "").strip() or _dt.date.today().isoformat()
+        booking_time = _dt.datetime.now().strftime("%H:%M")
+    else:
+        booking_date, booking_time = resolve_slot(date_str, time_str, visit_type)
+        if not booking_date or not booking_time:
+            raise ValueError("No available slot could be found.")
 
-    patient = _find_or_create_patient(name, mobile_number)
+    patient = _find_or_create_patient(name, mobile_number, data.get("age"), data.get("gender"))
     appt = Appointment(
         patient_id=patient.id,
         date=booking_date,

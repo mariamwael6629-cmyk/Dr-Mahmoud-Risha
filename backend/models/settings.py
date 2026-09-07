@@ -22,6 +22,9 @@ class ClinicSettings(db.Model):
     logo_path = db.Column(db.String(255))
     signature_path = db.Column(db.String(255))
     qr_path = db.Column(db.String(255))
+    checkup_price = db.Column(db.Float, default=0)       # كشف
+    followup_price = db.Column(db.Float, default=0)      # إعادة
+    consultation_price = db.Column(db.Float, default=0)  # استشارة
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def to_dict(self):
@@ -42,4 +45,7 @@ class ClinicSettings(db.Model):
             "logoUrl": self.logo_path,
             "signatureUrl": self.signature_path,
             "qrUrl": self.qr_path,
+            "checkupPrice": self.checkup_price or 0,
+            "followupPrice": self.followup_price or 0,
+            "consultationPrice": self.consultation_price or 0,
         }

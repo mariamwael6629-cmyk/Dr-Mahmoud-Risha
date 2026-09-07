@@ -50,26 +50,33 @@ jobs:
           Start-Sleep -Seconds 30
           try {
             # Frontend is public
-            $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5000" -TimeoutSec 20
+            $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5311" -TimeoutSec 20
             Write-Host "index status:" $r.StatusCode
             if ($r.StatusCode -ne 200) { throw "index not 200" }
 
             # API must reject unauthenticated access
             $code = 0
             try {
-              Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5000/api/appointments" -TimeoutSec 20 | Out-Null
+              Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5311/api/appointments" -TimeoutSec 20 | Out-Null
             } catch { $code = $_.Exception.Response.StatusCode.value__ }
             Write-Host "unauth api status:" $code
             if ($code -ne 401) { throw "expected 401 for unauthenticated API, got $code" }
 
             # Log in, then the API must work with the session cookie
             $login = Invoke-WebRequest -UseBasicParsing -Method Post -TimeoutSec 20 `
-              -Uri "http://127.0.0.1:5000/api/auth/login" -ContentType "application/json" `
+              -Uri "http://127.0.0.1:5311/api/auth/login" -ContentType "application/json" `
               -Body '{"username":"Risha","password":"Risha12345"}' -SessionVariable sess
             Write-Host "login status:" $login.StatusCode
-            $a = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5000/api/appointments" -TimeoutSec 20 -WebSession $sess
+            $a = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5311/api/appointments" -TimeoutSec 20 -WebSession $sess
             Write-Host "authed api status:" $a.StatusCode
             if ($login.StatusCode -ne 200 -or $a.StatusCode -ne 200) { throw "authenticated API failed" }
+
+            # Nurse account must also authenticate
+            $nurse = Invoke-WebRequest -UseBasicParsing -Method Post -TimeoutSec 20 `
+              -Uri "http://127.0.0.1:5311/api/auth/login" -ContentType "application/json" `
+              -Body '{"username":"Nurse","password":"Nurse12345"}'
+            Write-Host "nurse login status:" $nurse.StatusCode
+            if ($nurse.StatusCode -ne 200) { throw "nurse account failed to log in" }
           } finally {
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           }

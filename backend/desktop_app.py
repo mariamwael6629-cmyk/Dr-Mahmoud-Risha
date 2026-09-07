@@ -29,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-PORT = 5000
+PORT = 5311   # moved off 5000 so a stale old copy on 5000 can't be attached to
 DISCOVERY_PORT = 5001
 DISCOVERY_REQUEST = b"DR-RISHA-CLINIC-DISCOVERY?"
 DISCOVERY_REPLY = b"DR-RISHA-CLINIC:"
@@ -89,7 +89,7 @@ def _lan_ip():
 
 
 def _add_firewall_rule():
-    """Best-effort: allow inbound TCP 5000 (web) and UDP 5001 (auto-discovery)
+    """Best-effort: allow inbound TCP 5311 (web) and UDP 5001 (auto-discovery)
     so LAN clients can find and connect to this PC."""
     if os.name != "nt":
         return

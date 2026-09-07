@@ -779,6 +779,7 @@ const state = {
 };
 
 const API_BASE='/api';
+const APP_VERSION='v4 · دكتور + ممرضة / Doctor + Nurse';
 async function apiError(res){
   let data={};
   try{ data=await res.json(); }catch(e){}
@@ -1142,6 +1143,7 @@ function renderSignIn(){
       <div style="text-align:center;margin-top:1rem;">
         <button class="lang-btn" onclick="toggleLang()">${currentLang==='en'?'عربي':'English'}</button>
       </div>
+      <div style="text-align:center;margin-top:0.9rem;font-size:0.72rem;color:#94a3b8;font-weight:600">${APP_VERSION}</div>
     </div>
   </div>`;
 }
@@ -3143,7 +3145,7 @@ function checkRuntimeEnvironment(){
         <ol style="color:#444;line-height:1.7;margin:0 0 1rem;padding-left:1.2rem;">
           <li>Open a terminal in the project folder.</li>
           <li>Run: <code>cd backend &amp;&amp; python3 app.py</code></li>
-          <li>Open <code>http://localhost:5000</code> in your browser — not this file.</li>
+          <li>Open <code>http://localhost:5311</code> in your browser — not this file.</li>
         </ol>
         <p style="color:#777;font-size:.9rem;margin:0;">See README.md, "Set up and run the backend", for full setup steps.</p>
       </div>

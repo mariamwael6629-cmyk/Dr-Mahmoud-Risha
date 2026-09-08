@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <title>Dr Mahmoud Risha Rheumatology Clinic — Patient Management</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind CDN removed: the app uses hand-rolled CSS only, and depending on an
+     external CDN broke the README's offline/LAN promise. No utility classes are used. -->
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 
@@ -286,12 +287,53 @@ body.rtl .info-item .info-key{text-transform:none;letter-spacing:0;}
   .navbar{padding:0 1rem;flex-wrap:wrap;height:auto;padding-top:.55rem;padding-bottom:.55rem;}
   .nav-links{justify-content:flex-start;}
   .nav-search{min-width:0;width:100%;}
+  .nav-right{flex-wrap:wrap;margin-inline-start:0;width:100%;}
   .form-grid{grid-template-columns:1fr;}
   .info-grid{grid-template-columns:1fr;}
   .brand{font-size:1rem;}
-  
+
   #rx-preview-wrap{overflow-x:auto;}
 }
+@media(max-width:380px){
+  /* keep the top bar from overflowing on very small phones */
+  #user-badge{display:none !important;}
+  .nav-btn{padding:.35rem .6rem;font-size:.78rem;}
+  .lang-btn{padding:.32rem .6rem;}
+}
+
+/* ===== Dark mode (toggled via data-mode="dark" on <html>) ===== */
+:root[data-mode="dark"]{
+  --bg-1:#0b1220; --bg-2:#111827; --bg-3:#0f172a; --bg-4:#1e293b;
+  --shadow:0 8px 32px rgba(0,0,0,.55);
+}
+:root[data-mode="dark"] body{color:#e2e8f0;}
+:root[data-mode="dark"] .navbar{background:rgba(17,24,39,.82);border-bottom-color:rgba(255,255,255,.08);
+  box-shadow:0 4px 24px rgba(0,0,0,.4);}
+:root[data-mode="dark"] .brand,
+:root[data-mode="dark"] .page-heading{color:#c7d2fe;}
+:root[data-mode="dark"] .nav-btn{color:#cbd5e1;}
+:root[data-mode="dark"] .nav-search{background:rgba(30,41,59,.75);border-color:rgba(255,255,255,.12);}
+:root[data-mode="dark"] .nav-search input{color:#e2e8f0;}
+:root[data-mode="dark"] .glass-card{background:rgba(30,41,59,.75);border-color:rgba(255,255,255,.10);
+  box-shadow:var(--shadow);}
+:root[data-mode="dark"] .page-sub{color:#94a3b8;}
+:root[data-mode="dark"] .form-label{color:#cbd5e1;}
+:root[data-mode="dark"] .form-input{background:rgba(15,23,42,.7);border-color:rgba(255,255,255,.15);color:#e2e8f0;}
+:root[data-mode="dark"] .form-input::placeholder{color:#64748b;}
+:root[data-mode="dark"] .ac-dropdown{background:rgba(30,41,59,.98);border-color:rgba(255,255,255,.12);color:#e2e8f0;}
+:root[data-mode="dark"] .ac-item:hover{background:rgba(var(--accent-rgb),.25);}
+:root[data-mode="dark"] table{color:#e2e8f0;}
+:root[data-mode="dark"] td{border-color:rgba(255,255,255,.08);}
+:root[data-mode="dark"] .dialog,
+:root[data-mode="dark"] .detail-modal{background:rgba(17,24,39,.97);color:#e2e8f0;}
+:root[data-mode="dark"] .toast{background:rgba(30,41,59,.98);color:#e2e8f0;}
+:root[data-mode="dark"] .stat-card{background:rgba(30,41,59,.75);}
+:root[data-mode="dark"] .user-badge{color:#cbd5e1;}
+/* keep the printable prescription on white paper even in dark mode */
+:root[data-mode="dark"] #rx-preview-wrap{filter:none;}
+
+.user-badge{font-size:.74rem;font-weight:700;color:#475569;background:rgba(var(--accent-rgb),.10);
+  border-radius:8px;padding:.3rem .6rem;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -305,7 +347,10 @@ body.rtl .info-item .info-key{text-transform:none;letter-spacing:0;}
         <input type="text" id="globalSearch" autocomplete="off" oninput="onSearch(this.value)" onfocus="onSearch(this.value)" onblur="setTimeout(closeGlobalSearch,180)"/>
         <div id="global-search-dropdown" class="ac-dropdown" style="position:absolute;top:100%;left:0;right:0;margin-top:.35rem;width:auto"></div>
       </div>
+      <span id="user-badge" class="user-badge" style="display:none"></span>
+      <button class="lang-btn" id="modeBtn" onclick="toggleMode()" title="Light / Dark">🌙</button>
       <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
+      <button class="lang-btn" id="logoutBtn" onclick="doLogout()" style="display:none">⎋ <span id="logout-label">Logout</span></button>
     </div>
   </nav>
 
@@ -350,6 +395,9 @@ en:{
   signInTitle:'Sign In', username:'Username', password:'Password', loginBtn:'Sign In',
   systemSub:'Patient Management System',
   welcome:'Welcome back!', badCreds:'Invalid username or password.',
+  nurse:'Nurse', logout:'Logout', loggedOut:'Signed out.', sessionExpired:'Your session expired. Please sign in again.',
+  noPermission:'You do not have permission to open this section.', slotTaken:'That time slot is already booked. Please choose another.',
+  recordChanged:'This record was changed by someone else. Reloading the latest version.',
   dashTitle:'Patient Dashboard', dashSub:'Overview of all registered patients',
   statPt:'Total Patients', statAppt:'Appointments', statMed:'Medications',
   noPatients:'No patients found.',
@@ -497,6 +545,9 @@ ar:{
   signInTitle:'تسجيل الدخول', username:'اسم المستخدم', password:'كلمة المرور', loginBtn:'دخول',
   systemSub:'نظام إدارة المرضى',
   welcome:'مرحباً بعودتك!', badCreds:'اسم المستخدم أو كلمة المرور غير صحيحة.',
+  nurse:'ممرض/ة', logout:'تسجيل الخروج', loggedOut:'تم تسجيل الخروج.', sessionExpired:'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+  noPermission:'ليس لديك صلاحية لفتح هذا القسم.', slotTaken:'هذا الموعد محجوز بالفعل. اختر موعداً آخر.',
+  recordChanged:'تم تعديل هذا السجل بواسطة مستخدم آخر. يتم تحميل أحدث نسخة.',
   dashTitle:'لوحة المرضى', dashSub:'نظرة عامة على جميع المرضى المسجلين',
   statPt:'إجمالي المرضى', statAppt:'المواعيد', statMed:'الأدوية',
   noPatients:'لا يوجد مرضى.',
@@ -653,6 +704,7 @@ function toggleLang(){
   document.documentElement.dir  = isAr ? 'rtl' : 'ltr';
   document.getElementById('langBtn').textContent = isAr ? 'English' : 'عربي';
   document.getElementById('globalSearch').placeholder = t('searchPh');
+  applyRoleUI();
   navigate(state.currentPage);
 }
 
@@ -690,6 +742,7 @@ function applyTheme(themeId, opts){
 
 const state = {
   currentPage:'signIn',
+  currentUser:null,
   patients:[], appointments:[], medications:[],
   searchQuery:'', medSort:'recent',
   invoiceList:[], invoiceSummary:null, invoicesLoaded:false, financialSearch:'',
@@ -722,8 +775,18 @@ async function apiError(res){
   return err;
 }
 async function apiFetch(path,opts){
-  try{ return await fetch(API_BASE+path,opts); }
+  let res;
+  try{ res=await fetch(API_BASE+path,Object.assign({credentials:'same-origin'},opts||{})); }
   catch(e){ throw new Error('Cannot reach the server. Make sure the app is running and try again.'); }
+  if(res.status===401 && path!=='/auth/login' && path!=='/auth/me'){ onSessionExpired(); }
+  return res;
+}
+function onSessionExpired(){
+  if(state.currentUser){
+    state.currentUser=null;
+    toast(t('sessionExpired'),'error');
+  }
+  navigate('signIn');
 }
 async function apiGet(path){
   const res=await apiFetch(path);
@@ -887,7 +950,12 @@ function resolveConfirm(v){
 
 const ALL_PAGES=['signIn','home','patients','addPatient','medications','prescription','booking','financial','settings'];
 
+const DOCTOR_ONLY_PAGES=['prescription','medications'];
 function navigate(page){
+  // Guard: require auth for everything but the sign-in screen, and keep
+  // nurses out of the clinical pages even if a link is triggered directly.
+  if(page!=='signIn' && !isAuthenticated()){ page='signIn'; }
+  if(isNurse() && DOCTOR_ONLY_PAGES.includes(page)){ toast(t('noPermission'),'error'); page='home'; }
   ALL_PAGES.forEach(p=>{
     const el=document.getElementById(`page-${p}`);
     if(el) el.style.display='none';
@@ -905,16 +973,18 @@ function navigate(page){
 function buildNavLinks(activePage){
   document.getElementById('brand-el').textContent=t('brand');
 
-  const pages=[
+  let pages=[
     {id:'home',        label:()=>t('home'),         icon:icoHome()},
     {id:'addPatient',  label:()=>t('addPatient'),   icon:icoAddPt()},
     {id:'booking',     label:()=>t('booking'),      icon:icoCalendar()},
     {id:'patients',    label:()=>t('patients'),     icon:icoDoctor()},
-    {id:'prescription',label:()=>t('prescription'), icon:icoRx()},
-    {id:'medications', label:()=>t('medications'),  icon:icoMed()},
+    {id:'prescription',label:()=>t('prescription'), icon:icoRx(),  doctorOnly:true},
+    {id:'medications', label:()=>t('medications'),  icon:icoMed(), doctorOnly:true},
     {id:'financial',   label:()=>t('financial'),    icon:icoFinancial()},
     {id:'settings',    label:()=>t('settings'),     icon:icoSettings()},
   ];
+  // Nurses (front-desk) don't get the medical/clinical pages.
+  if(isNurse()) pages=pages.filter(p=>!p.doctorOnly);
   document.getElementById('nav-links-el').innerHTML = pages.map(p=>`
     <button class="nav-btn ${activePage===p.id?'active':''}" onclick="${p.id==='addPatient'?'cancelEditPatient_silent();':''}navigate('${p.id}')">
       ${p.icon} ${p.label()}
@@ -1038,7 +1108,7 @@ function renderSignIn(){
         <input class="form-input" type="password" id="si-pass" placeholder="••••••"
           autocomplete="off" onkeydown="if(event.key==='Enter')doSignIn()"/>
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.4rem" onclick="doSignIn()">
+      <button id="si-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.4rem" onclick="doSignIn()">
         ${t('loginBtn')}
       </button>
       <div style="text-align:center;margin-top:1rem;">
@@ -1051,15 +1121,47 @@ function renderSignIn(){
 async function doSignIn(){
   const u=document.getElementById('si-user').value.trim();
   const p=document.getElementById('si-pass').value;
-  if(u==='Risha'&&p==='Risha12345'){
+  const btn=document.getElementById('si-btn');
+  if(btn) btn.disabled=true;
+  try{
+    const res=await apiFetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    if(!res.ok){ toast(t('badCreds'),'error'); document.getElementById('si-pass').value=''; return; }
+    const user=await res.json();
+    state.currentUser=user;
     toast(t('welcome'),'success');
-    markAuthenticated();
     document.getElementById('si-user').value='';
     document.getElementById('si-pass').value='';
+    applyRoleUI();
     await loadInitialData();
     navigate('home');
+  }catch(err){
+    toast(err.message||t('badCreds'),'error');
+  }finally{ if(btn) btn.disabled=false; }
+}
+
+function isDoctor(){ return state.currentUser && state.currentUser.role==='doctor'; }
+function isNurse(){ return state.currentUser && state.currentUser.role==='nurse'; }
+
+async function doLogout(){
+  try{ await apiFetch('/auth/logout',{method:'POST'}); }catch(e){}
+  state.currentUser=null;
+  state.patients=[]; state.appointments=[]; state.homeQueueLoaded=false;
+  applyRoleUI();
+  navigate('signIn');
+  toast(t('loggedOut'),'success');
+}
+
+function applyRoleUI(){
+  const logged=!!state.currentUser;
+  const nb=document.getElementById('navbar');
+  const lo=document.getElementById('logoutBtn');
+  const badge=document.getElementById('user-badge');
+  if(lo) lo.style.display=logged?'':'none';
+  const ll=document.getElementById('logout-label'); if(ll) ll.textContent=t('logout');
+  if(badge){
+    if(logged){ badge.style.display=''; badge.textContent=(state.currentUser.username||'')+' · '+t(state.currentUser.role); }
+    else badge.style.display='none';
   }
-  else{ toast(t('badCreds'),'error'); document.getElementById('si-pass').value=''; }
 }
 
 function todayISO(){ return new Date().toISOString().split('T')[0]; }
@@ -1187,9 +1289,14 @@ function genderLabel(g){ return g==='Male'?t('male'):g==='Female'?t('female'):'�
 
 async function openPatientDetail(idx){
   const p=state.patients[idx]; if(!p) return;
-  const rxHistoryRes=await Promise.allSettled([apiGet(`/patients/${p.id}/prescriptions`)]);
-  const rxHistory=rxHistoryRes[0].status==='fulfilled'?rxHistoryRes[0].value:[];
-  const fields=[
+  const nurse=isNurse();
+  const rxHistory = nurse ? [] : (await Promise.allSettled([apiGet(`/patients/${p.id}/prescriptions`)]))[0].value || [];
+  const fields = nurse ? [
+    [t('patNo'),esc(p.patientNumber)],[t('fullName'),esc(p.Name)],
+    [t('age'),esc(p.age??'—')],[t('gender'),genderLabel(p.gender)],
+    [t('mobileNum'),esc(p.mobileNumber||'—')],
+    [t('patientNotes'),esc(p.notes||'—')],
+  ] : [
     [t('patNo'),esc(p.patientNumber)],[t('fullName'),esc(p.Name)],
     [t('age'),esc(p.age??'—')],[t('gender'),genderLabel(p.gender)],
     [t('symptoms'),esc(p.symptoms||'—')],[t('diag'),esc(p.diagnosis||'—')],
@@ -1211,6 +1318,7 @@ async function openPatientDetail(idx){
           <span>${icoCalendar()} ${esc(a.date||'—')}${a.time?` ${esc(a.time)}`:''} — ${visitTypeLabel(a.visitType)||t('apptSec')+' '+(i+1)}</span>
           <span style="font-size:0.74rem;font-weight:700;color:${statusColor(a.status)}">${statusLabel(a.status)}</span>
         </div>
+        ${nurse?'':`
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem;font-size:0.82rem;color:#334155;margin-top:0.4rem">
           <div><strong>${t('diag')}:</strong> ${esc(a.diagnosis||'—')}</div>
           <div><strong>${t('drugs')}:</strong> ${esc(a.drugs||'—')}</div>
@@ -1226,7 +1334,7 @@ async function openPatientDetail(idx){
             <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="uploadDetailFile(${idx},${i},'test_result',this)"/></label>
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">${t('xrayResultFile')}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="uploadDetailFile(${idx},${i},'xray_result',this)"/></label>
-        </div>
+        </div>`}
       </div>`;
       }).join('');
 
@@ -1260,14 +1368,16 @@ async function openPatientDetail(idx){
       <button class="btn btn-ghost btn-sm" onclick="startEditPatient(${idx})">${t('edit')}</button>
     </div>
     <div class="info-grid">${fields.map(([k,v])=>`<div class="info-item"><div class="info-key">${k}</div><div class="info-val">${v}</div></div>`).join('')}</div>
+    ${nurse?'':`
     <div class="section-label" style="margin-top:1.5rem">${t('medHistExtra')}</div>
     ${medHistExtraSummaryHTML(p)}
     <div class="section-label" style="margin-top:1.5rem">${t('addAppointmentBtn')}</div>
-    ${detailApptFormHTML(p.id)}
+    ${detailApptFormHTML(p.id)}`}
     <div class="section-label" style="margin-top:1.5rem">${t('apptSec')}</div>
     ${apptsHTML}
+    ${nurse?'':`
     <div class="section-label" style="margin-top:1.5rem">${t('rxHistory')}</div>
-    ${rxHistHTML}`;
+    ${rxHistHTML}`}`;
   document.getElementById('detail-overlay').style.display='flex';
 }
 
@@ -1547,6 +1657,7 @@ function renderAddPatient(){
           <div class="field-group"><label class="form-label">${t('mobileNum')} *</label>
             <input class="form-input" type="tel" name="mobileNumber" required placeholder="01xxxxxxxxx" value="${esc(editingPt?editingPt.mobileNumber:'')}"/></div>
         </div>
+        ${isNurse()?'':`
         <div class="section-label">${t('medHist')}</div>
         <div class="form-grid">
           <div class="field-group"><label class="form-label">${t('diag')}</label>
@@ -1561,10 +1672,10 @@ function renderAddPatient(){
           <div class="field-group"><label class="form-label">${t('famHist')}</label>
             <input class="form-input" type="text" name="familyHistory" value="${esc(editingPt?editingPt.familyHistory:'')}"/></div>
         </div>
-        ${renderMedHistExtraSection()}
+        ${renderMedHistExtraSection()}`}
         <div class="field-group"><label class="form-label">${t('patientNotes')}</label>
           <textarea class="form-input" name="notes" rows="2">${esc(editingPt?editingPt.notes:'')}</textarea></div>
-        ${editingPt?'':`
+        ${(editingPt||isNurse())?'':`
         <div class="section-label">
           ${t('apptSec')}
           <button type="button" class="btn btn-ghost btn-sm" onclick="addAppt()"
@@ -1667,6 +1778,7 @@ async function fetchNextPatientNumber(){
 function startEditPatient(idx){
   const p=state.patients[idx]; if(!p) return;
   state.editingPatientId=p.id;
+  state.editingPatientVersion=p.version;
   state.medicalHistoryExtra={...(p.medicalHistoryExtra||{})};
   closeDetail();
   navigate('addPatient');
@@ -1701,15 +1813,30 @@ async function savePatient(event,forceCreateDuplicate){
   if(state.editingPatientId!=null){
     try{
       delete payload.patientNumber; delete payload.appointments;
+      if(state.editingPatientVersion!=null) payload.version=state.editingPatientVersion;
       const updated=await apiPut(`/patients/${state.editingPatientId}`,payload);
       const idx=state.patients.findIndex(p=>p.id===state.editingPatientId);
       if(idx!==-1) state.patients[idx]={...state.patients[idx],...updated};
       state.editingPatientId=null;
+      state.editingPatientVersion=null;
       state.medicalHistoryExtra={};
       toast(t('patientUpdated'),'success');
       navigate('home');
     }catch(err){
-      toast(err.message||t('fillFields'),'error');
+      if(err.status===409 && err.data && err.data.error==='version_conflict'){
+        // Someone else saved first — reload the latest and let the user re-apply.
+        toast(t('recordChanged'),'error');
+        try{
+          const fresh=await apiGet(`/patients/${state.editingPatientId}`);
+          const idx=state.patients.findIndex(p=>p.id===state.editingPatientId);
+          if(idx!==-1) state.patients[idx]=fresh;
+          state.editingPatientVersion=fresh.version;
+          state.medicalHistoryExtra={...(fresh.medicalHistoryExtra||{})};
+          renderAddPatient(); document.getElementById('page-addPatient').style.display='';
+        }catch(e){}
+      }else{
+        toast(err.message||t('fillFields'),'error');
+      }
     }
     return;
   }
@@ -2313,7 +2440,10 @@ async function bookWalkin(){
     document.getElementById('bk-name').value='';
     document.getElementById('bk-phone').value='';
     await refreshAfterBooking();
-  }catch(err){ toast(err.message||t('fillFields'),'error'); }
+  }catch(err){
+    if(err.status===409 && err.data && err.data.error==='slot_conflict') toast(t('slotTaken'),'error');
+    else toast(err.message||t('fillFields'),'error');
+  }
 }
 
 async function importAppointmentsFile(inputEl){
@@ -2768,9 +2898,21 @@ function checkRuntimeEnvironment(){
     </div>`;
   return true;
 }
-const AUTH_KEY='clinicAuthed';
-function markAuthenticated(){ sessionStorage.setItem(AUTH_KEY,'1'); }
-function isAuthenticated(){ return sessionStorage.getItem(AUTH_KEY)==='1'; }
+function isAuthenticated(){ return !!state.currentUser; }
+
+// --- Light / Dark mode (independent of the accent color themes) ---
+const MODE_STORAGE_KEY='clinicMode';
+function applyMode(mode){
+  const m = mode==='dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-mode', m);
+  localStorage.setItem(MODE_STORAGE_KEY, m);
+  const btn=document.getElementById('modeBtn');
+  if(btn) btn.textContent = m==='dark' ? '☀️' : '🌙';
+}
+function toggleMode(){
+  const cur=document.documentElement.getAttribute('data-mode')==='dark'?'dark':'light';
+  applyMode(cur==='dark'?'light':'dark');
+}
 
 let liveSyncTimer=null;
 function startLiveSync(){
@@ -2790,14 +2932,22 @@ async function liveSyncTick(){
 
 async function bootApp(){
   applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'ocean');
+  applyMode(localStorage.getItem(MODE_STORAGE_KEY) || 'light');
   if(checkRuntimeEnvironment()) return;
   startLiveSync();
-  if(isAuthenticated()){
-    await loadInitialData();
-    navigate('home');
-  }else{
-    navigate('signIn');
-  }
+  // Restore an existing server session if one is still valid.
+  try{
+    const res=await apiFetch('/auth/me');
+    if(res.ok){
+      state.currentUser=await res.json();
+      applyRoleUI();
+      await loadInitialData();
+      navigate('home');
+      return;
+    }
+  }catch(e){}
+  applyRoleUI();
+  navigate('signIn');
 }
 bootApp();
 </script>

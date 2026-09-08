@@ -20,6 +20,14 @@ class DuplicatePatientError(Exception):
         self.existing_patient = existing_patient
         super().__init__("A patient with this mobile number already exists")
 
+
+class StaleVersionError(Exception):
+    """Raised when an update carries an out-of-date `version` (someone else
+    edited the record first) — optimistic-locking conflict."""
+    def __init__(self, current_version):
+        self.current_version = current_version
+        super().__init__("This record was changed by someone else")
+
                                                                                           
 _EAGER_LOAD = selectinload(Patient.appointments).selectinload(Appointment.files)
 
@@ -111,6 +119,9 @@ def create_patient(data, allow_duplicate=False):
     raise last_error
 
 def update_patient(patient, data):
+    expected = data.get("version")
+    if expected is not None and int(expected) != (patient.version or 1):
+        raise StaleVersionError(patient.version or 1)
     field_map = [
         ("Name", "name"), ("age", "age"), ("gender", "gender"),
         ("previousOperations", "previous_operations"), ("previousTreatment", "previous_treatment"),
@@ -122,6 +133,7 @@ def update_patient(patient, data):
             setattr(patient, attr, data[json_key])
     if "medicalHistoryExtra" in data:
         patient.medical_history_extra = json.dumps(data["medicalHistoryExtra"]) if data["medicalHistoryExtra"] else None
+    patient.version = (patient.version or 1) + 1
     db.session.commit()
     return patient
 

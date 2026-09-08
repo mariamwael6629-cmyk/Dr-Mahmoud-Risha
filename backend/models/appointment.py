@@ -20,6 +20,7 @@ class Appointment(db.Model):
     visit_type = db.Column(db.String(30))
     visit_notes = db.Column(db.Text)
     time = db.Column(db.String(10))
+    version = db.Column(db.Integer, nullable=False, default=1)
 
     files = db.relationship("UploadedFile", backref="appointment", cascade="all, delete-orphan")
 
@@ -38,6 +39,7 @@ class Appointment(db.Model):
             "status": self.status or "waiting",
             "visitType": self.visit_type,
             "visitNotes": self.visit_notes,
+            "version": self.version or 1,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "files": [f.to_dict() for f in self.files],
         }

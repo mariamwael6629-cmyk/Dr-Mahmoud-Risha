@@ -344,9 +344,84 @@ regression (29 checks) re-run afterward: **all green**.
 
 ---
 
+## 🛠️ Remediation — Round 2 (implemented & verified)
+
+After the first pass, the following were implemented at the client's request
+("fix these things"). All are enforced **server-side** (the frontend is never
+trusted) and covered by the automated suite in `tests/`.
+
+### Authentication & roles (fixes BUG-001, BUG-003)
+- New `User` model with **hashed passwords** (Werkzeug) and a `role` column.
+  Two accounts seeded on first boot: **`Risha` (doctor)** and **`Nurse` (nurse)**.
+- Session-based auth: `POST /api/auth/login`, `POST /api/auth/logout`,
+  `GET /api/auth/me`. Signed session cookie; secret from `CLINIC_SECRET_KEY` or
+  auto-persisted to `backend/database/secret_key`.
+- A global `before_request` guard now protects **every** `/api/*` route:
+  unauthenticated → **401**; role not permitted → **403**.
+- Frontend rewired to log in via the API, restore the session on boot
+  (`/auth/me`), show a role badge, and handle 401 by returning to sign-in.
+
+### Nurse = no medical information (client's explicit rule)
+- **Blocked (403) for nurse:** prescriptions, the medication/diagnosis/lab/
+  radiology drug database, uploaded medical files, settings write & DB backup,
+  and patient deletion.
+- **Medical fields stripped from API responses** for nurse (diagnosis, symptoms,
+  previous operations/treatment, family history, medical-history extras, and all
+  clinical appointment fields) and **ignored on writes**.
+- Frontend hides the Prescription/Medications nav, the clinical fields in the
+  Add-Patient form, and the medical sections of the patient detail for nurses —
+  matching the enforced backend boundary.
+
+### Logout (fixes BUG-004)
+- Logout button in the navbar (both roles) → `POST /api/auth/logout`, clears
+  client state, returns to sign-in. Session cookie invalidated server-side.
+
+### Concurrent-edit protection / optimistic locking (fixes BUG-005)
+- `version` columns added to `patients` and `appointments` (via the in-place
+  migration helper). Updates carrying a stale `version` are rejected with
+  **409 `version_conflict`**; omitting it stays backward-compatible. The patient
+  edit form sends the version and, on conflict, reloads the latest record.
+
+### Double-booking prevention (fixes BUG-007)
+- New overlap check rejects a second appointment in the same/overlapping slot
+  with **409 `slot_conflict`** (nested add, explicit walk-in, and reschedule).
+  Auto ("nearest") walk-ins transparently roll to the next free slot instead.
+
+### Dark mode (fixes BUG-006)
+- A real light/dark toggle (`🌙`/`☀️`) independent of the 12 accent themes,
+  persisted in `localStorage` (`clinicMode`), with a full dark palette for the
+  shell, cards, inputs, tables, dropdowns, dialogs and toasts.
+
+### Offline mode (fixes the Tailwind caveat)
+- The unused `cdn.tailwindcss.com` script was removed (it provided nothing — the
+  app is hand-rolled CSS), so the app no longer needs that external request to
+  render. Google Fonts remain a progressive enhancement with system-font
+  fallbacks.
+
+### Inventory
+- Per the client's instruction, **no inventory page was added**; the misleading
+  "Clinic Inventory Management" claim was removed from the README instead.
+
+### Documentation
+- README updated: real seeded credentials + roles table (replacing the outdated
+  `admin`/`123`), auth/roles feature description, and auth endpoints in the API
+  table.
+
+**Updated bug status:** BUG-001 ✅ fixed · BUG-002 ✅ fixed (round 1) ·
+BUG-003 ✅ fixed · BUG-004 ✅ fixed · BUG-005 ✅ fixed · BUG-006 ✅ fixed ·
+BUG-007 ✅ fixed · BUG-008 (weak field validation) — open (low). Offline/Tailwind
+✅ fixed. Inventory — intentionally not built.
+
+**Regression:** full automated suite (`tests/`) re-run green after remediation —
+API, auth/permissions, concurrency (BUG-002), double-booking, optimistic locking,
+and browser E2E (doctor vs nurse UI, logout, dark mode, i18n, responsive).
+
 ## 📷 Evidence (in `qa/`)
 
 `01_login_page.png`, `02_home_dashboard.png`, `10_patient_list.png`,
 `11_prescription_EN.png`, `12_prescription_AR.png`, `resp_375.png`,
-`resp_768.png`, and per-page captures `page_*.png`. Reusable automated tests live
-in `tests/` (see `tests/README.md`).
+`resp_768.png`, and per-page captures `page_*.png`. Round-2 evidence:
+`20_doctor_dark.png` (dark mode), `21_nurse_dashboard.png` (nurse nav),
+`22_nurse_addpatient.png` (nurse form — no medical fields),
+`23_nurse_patient_detail.png` (nurse detail — no medical info). Reusable
+automated tests live in `tests/` (see `tests/README.md`).

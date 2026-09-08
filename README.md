@@ -16,7 +16,7 @@ generator matching the clinic's real letterhead.
 - **🔎 Smart Autocomplete:** Diagnosis and medication name fields suggest matches as you type, backed by a searchable library in the database.
 - **💊 Medication Database:** A dedicated panel to add, view, and organize available drugs, active ingredients, and specific usage notes.
 - **📋 Smart Prescription Generator:** Automatically generates a high-fidelity, printable bilingual prescription matching the clinic's real paper letterhead (Dr Mahmoud Risha — Rheumatology Clinic).
-- **📦 Clinic Inventory Management:** Real-time stock tracking for clinic supplies with automated status indicators (In Stock, Low Stock, Out of Stock).
+- **🔐 Roles & access control:** Two roles with server-enforced permissions — **Doctor** (full clinical access) and **Nurse** (front-desk: patient demographics, appointments/queue and billing, but **no access to any medical information** — prescriptions, the drug database, uploaded medical files and clinical fields are hidden and blocked at the API).
 
 ---
 
@@ -62,8 +62,18 @@ branding settings (see [Test/seed data](#-testseed-data) below).
 - App (frontend + API, same origin): **http://127.0.0.1:5000/**
 - Interactive API docs (Swagger UI): **http://127.0.0.1:5000/apidocs**
 
-Sign in with username `admin` / password `123` (placeholder credentials —
-see `index.html`'s sign-in handler if you need to change them).
+Sign in with one of the seeded accounts (created automatically on first boot):
+
+| Role | Username | Password |
+|---|---|---|
+| Doctor | `Risha` | `Risha12345` |
+| Nurse | `Nurse` | `Nurse12345` |
+
+Passwords are stored hashed (Werkzeug) in the `users` table. You can override the
+seed passwords on the very first boot via the `DOCTOR_PASSWORD` / `NURSE_PASSWORD`
+environment variables. Authentication uses a signed session cookie; the session
+secret is read from `CLINIC_SECRET_KEY` or auto-generated and persisted to
+`backend/database/secret_key`.
 
 ### 4. Use it from another device on the same LAN
 
@@ -134,7 +144,8 @@ parameters and example responses) in the interactive Swagger UI at
 
 | Resource | Base path | Notes |
 |---|---|---|
-| Patients | `/api/patients` | CRUD + `/api/patients/duplicate-check` (duplicate-mobile-number detection) |
+| Auth | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me` | Session login/logout + current user. All other `/api/*` routes require an authenticated session; clinical routes require the `doctor` role. |
+| Patients | `/api/patients` | CRUD + `/api/patients/duplicate-check` (duplicate-mobile-number detection). Updates accept an optional `version` for optimistic-locking. |
 | Appointments | `/api/patients/<id>/appointments`, `/api/appointments/<id>` | Nested under a patient |
 | Files | `/api/files/upload`, `/api/files/<id>/download`, `/api/files/<id>/preview` | PDF/PNG/JPG/JPEG, attached to a patient or appointment |
 | Diagnosis autocomplete | `/api/diagnosis/search?q=...` | Backs the diagnosis suggestion dropdown |

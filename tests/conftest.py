@@ -46,13 +46,33 @@ def find_chromium():
     return None
 
 
-@pytest.fixture(scope="session")
-def api():
+def _make_session(username, password):
     import requests
     s = requests.Session()
-    # Fail fast with a clear message if the app is not running.
     try:
         s.get(f"{API}/patients", timeout=5)
     except Exception as exc:  # pragma: no cover
         pytest.skip(f"App not reachable at {BASE_URL}: {exc}")
+    r = s.post(f"{API}/auth/login", json={"username": username, "password": password}, timeout=5)
+    if r.status_code != 200:  # pragma: no cover
+        pytest.skip(f"Could not log in as {username} (status {r.status_code}) — check seeded accounts.")
     return s
+
+
+@pytest.fixture(scope="session")
+def api():
+    """Authenticated Doctor session (full access)."""
+    return _make_session(DOCTOR_USERNAME, DOCTOR_PASSWORD)
+
+
+@pytest.fixture(scope="session")
+def nurse_api():
+    """Authenticated Nurse session (front-desk role, no medical access)."""
+    return _make_session(NURSE_USERNAME, NURSE_PASSWORD)
+
+
+@pytest.fixture(scope="session")
+def anon_api():
+    """Unauthenticated session."""
+    import requests
+    return requests.Session()

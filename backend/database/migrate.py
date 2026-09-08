@@ -7,12 +7,15 @@ from sqlalchemy import text
 
 from database import db
 
+# `version` columns support optimistic locking (concurrent-edit protection):
+# each update bumps the version and rejects writes carrying a stale one.
 NEW_COLUMNS = {
     "appointments": [
         ("status", "VARCHAR(20) DEFAULT 'waiting'"),
         ("visit_type", "VARCHAR(30)"),
         ("visit_notes", "TEXT"),
         ("time", "VARCHAR(10)"),
+        ("version", "INTEGER DEFAULT 1"),
     ],
     "medication_records": [
         ("generic_name", "VARCHAR(150)"),
@@ -21,6 +24,7 @@ NEW_COLUMNS = {
     ],
     "patients": [
         ("medical_history_extra", "TEXT"),
+        ("version", "INTEGER DEFAULT 1"),
     ],
 }
 

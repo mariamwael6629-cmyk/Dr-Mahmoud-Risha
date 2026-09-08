@@ -40,11 +40,15 @@ def _toast(page):
         return ""
 
 
+def _role(pg):
+    return pg.evaluate("state.currentUser && state.currentUser.role")
+
+
 def test_doctor_login_succeeds(browser):
     ctx = browser.new_context()
     pg = ctx.new_page()
     _login(pg, DOCTOR_USERNAME, DOCTOR_PASSWORD)
-    assert pg.evaluate("sessionStorage.getItem('clinicAuthed')") == "1"
+    assert _role(pg) == "doctor"
     ctx.close()
 
 
@@ -53,18 +57,43 @@ def test_invalid_logins_rejected(browser):
         ctx = browser.new_context()
         pg = ctx.new_page()
         _login(pg, user, pw)
-        assert pg.evaluate("sessionStorage.getItem('clinicAuthed')") != "1"
+        assert pg.evaluate("state.currentUser") is None
         ctx.close()
 
 
-def test_nurse_account_absent(browser):
-    """BUG-001: the Nurse account does not exist and cannot log in.
-    Update this test when a real Nurse account/role is implemented."""
+def test_nurse_login_and_nav_restrictions(browser):
+    """Nurse logs in and does NOT get the clinical (doctor-only) nav items."""
     ctx = browser.new_context()
     pg = ctx.new_page()
     _login(pg, NURSE_USERNAME, NURSE_PASSWORD)
-    assert pg.evaluate("sessionStorage.getItem('clinicAuthed')") != "1", \
-        "Nurse logged in — account/roles were added; update BUG-001."
+    assert _role(pg) == "nurse"
+    nav = " ".join(pg.locator(".nav-btn").nth(i).inner_text() for i in range(pg.locator(".nav-btn").count()))
+    assert "Prescription" not in nav
+    assert "Medications" not in nav
+    # direct navigation to a doctor-only page is blocked
+    pg.evaluate("navigate('prescription')"); pg.wait_for_timeout(600)
+    assert pg.evaluate("state.currentPage") == "home"
+    ctx.close()
+
+
+def test_nurse_add_patient_hides_medical_fields(browser):
+    ctx = browser.new_context()
+    pg = ctx.new_page()
+    _login(pg, NURSE_USERNAME, NURSE_PASSWORD)
+    pg.evaluate("navigate('addPatient')"); pg.wait_for_timeout(700)
+    assert pg.locator('#patientForm input[name="name"]').count() == 1
+    assert pg.locator('#patientForm input[name="diagnosis"]').count() == 0
+    assert pg.locator('#patientForm input[name="symptoms"]').count() == 0
+    ctx.close()
+
+
+def test_logout(browser):
+    ctx = browser.new_context()
+    pg = ctx.new_page()
+    _login(pg, DOCTOR_USERNAME, DOCTOR_PASSWORD)
+    pg.evaluate("doLogout()"); pg.wait_for_timeout(800)
+    assert pg.evaluate("state.currentUser") is None
+    assert pg.evaluate("state.currentPage") == "signIn"
     ctx.close()
 
 
@@ -72,8 +101,8 @@ def test_session_isolation_between_contexts(browser):
     a = browser.new_context(); pga = a.new_page()
     b = browser.new_context(); pgb = b.new_page()
     _login(pga, DOCTOR_USERNAME, DOCTOR_PASSWORD)
-    pgb.goto(BASE_URL + "/"); pgb.wait_for_timeout(800)
-    assert pgb.evaluate("sessionStorage.getItem('clinicAuthed')") is None
+    pgb.goto(BASE_URL + "/"); pgb.wait_for_timeout(1000)
+    assert pgb.evaluate("state.currentUser") is None
     assert pgb.locator("#si-user").is_visible()
     a.close(); b.close()
 
@@ -130,6 +159,18 @@ def test_theme_persists(browser):
     _login(pg, DOCTOR_USERNAME, DOCTOR_PASSWORD)
     pg.evaluate("applyTheme('rose')"); pg.wait_for_timeout(300)
     assert pg.evaluate("localStorage.getItem('clinicTheme')") == "rose"
+    ctx.close()
+
+
+def test_dark_mode_toggle_and_persist(browser):
+    ctx = browser.new_context()
+    pg = ctx.new_page()
+    _login(pg, DOCTOR_USERNAME, DOCTOR_PASSWORD)
+    pg.click("#modeBtn"); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.documentElement.getAttribute('data-mode')") == "dark"
+    assert pg.evaluate("localStorage.getItem('clinicMode')") == "dark"
+    pg.click("#modeBtn"); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.documentElement.getAttribute('data-mode')") == "light"
     ctx.close()
 
 

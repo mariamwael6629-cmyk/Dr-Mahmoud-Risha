@@ -80,8 +80,10 @@ def test_duplicate_check(api, patient):
 
 def test_appointment_lifecycle(api, patient):
     pid = patient["id"]
+    # date-only appointment (queue entry) — no specific time, so it never
+    # collides with the double-booking check regardless of other test data.
     r = api.post(f"{API}/patients/{pid}/appointments",
-                 json={"date": "2026-09-10", "time": "18:00", "visitType": "consultation"})
+                 json={"date": "2026-09-10", "visitType": "consultation"})
     assert r.status_code == 201
     aid = r.json()["id"]
     r = api.put(f"{API}/appointments/{aid}", json={"status": "completed"})
@@ -175,9 +177,7 @@ def test_path_traversal_blocked(api):
     assert api.get(f"{BASE_URL}/assets/..%2f..%2fbackend%2fconfig.py").status_code in (403, 404)
 
 
-def test_api_has_no_auth_documented(api):
-    """Regression marker for BUG-003: the API is currently fully open.
-    When authentication is added, this test should be updated to expect 401."""
-    import requests
-    r = requests.get(f"{API}/patients")
-    assert r.status_code == 200, "If this now returns 401, auth was added — update BUG-003."
+def test_unauthenticated_requests_blocked(anon_api):
+    """BUG-003 fixed: the API now requires authentication."""
+    assert anon_api.get(f"{API}/patients").status_code == 401
+    assert anon_api.post(f"{API}/prescriptions", json={"patientId": 1}).status_code == 401

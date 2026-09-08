@@ -1,12 +1,13 @@
 import os
 import sys
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(BASE_DIR)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session
 from flask_cors import CORS
 
 from config import Config, DATABASE_DIR, UPLOADS_DIR, STATIC_ROOT
@@ -14,7 +15,26 @@ from database import db
 import models  # noqa: F401
 from database.migrate import run_migrations
 from database.seed import seed_if_empty
+import permissions
 from routes import register_blueprints
+
+
+def _load_secret_key():
+    """Stable session secret. Prefer CLINIC_SECRET_KEY; otherwise persist a
+    generated one next to the database so sessions survive restarts on the
+    clinic PC without any manual setup."""
+    env = os.environ.get("CLINIC_SECRET_KEY")
+    if env:
+        return env
+    os.makedirs(DATABASE_DIR, exist_ok=True)
+    key_path = os.path.join(DATABASE_DIR, "secret_key")
+    if os.path.exists(key_path):
+        with open(key_path, "r", encoding="utf-8") as fh:
+            return fh.read().strip()
+    key = os.urandom(32).hex()
+    with open(key_path, "w", encoding="utf-8") as fh:
+        fh.write(key)
+    return key
 
 
 def create_app():
@@ -26,8 +46,33 @@ def create_app():
 
     app.json.ensure_ascii = False
 
-    CORS(app)
+    app.secret_key = _load_secret_key()
+    app.config.update(
+        PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+    )
+
+    # CORS must allow credentials so the session cookie is honoured by browsers.
+    CORS(app, supports_credentials=True)
     db.init_app(app)
+
+    @app.before_request
+    def _enforce_auth():
+        path = request.path
+        # Only guard the JSON API; static files and the SPA shell are public.
+        if not path.startswith("/api/"):
+            return None
+        if request.method == "OPTIONS" or permissions.is_public(path):
+            return None
+        role = session.get("role")
+        if not role:
+            return jsonify({"error": "not_authenticated",
+                            "message": "Authentication required."}), 401
+        if permissions.forbidden_for_role(role, request.method, path):
+            return jsonify({"error": "forbidden",
+                            "message": "Your role is not permitted to perform this action."}), 403
+        return None
     if not getattr(sys, "frozen", False):
         from flasgger import Swagger
         Swagger(app)

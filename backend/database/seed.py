@@ -4,11 +4,23 @@ and the clinic branding settings (extracted from the doctor's prescription templ
 Each library is upserted by its unique name/code so re-running on an already-seeded
 database still picks up newly-added catalog entries, without duplicating existing ones.
 """
+import os
+
 from database import db
 from models.diagnosis import DiagnosisLibrary
 from models.medication import MedicationLibrary
 from models.lab_radiology import LabTestLibrary, RadiologyLibrary
 from models.settings import ClinicSettings
+from models.user import User
+
+# Default clinic accounts. Passwords can be overridden at first boot via env
+# vars (DOCTOR_PASSWORD / NURSE_PASSWORD); otherwise the documented test
+# credentials are used. Only seeded when the users table is empty, so changing
+# these later has no effect on an existing database.
+DEFAULT_USERS = [
+    ("Risha", os.environ.get("DOCTOR_PASSWORD", "Risha12345"), "doctor"),
+    ("Nurse", os.environ.get("NURSE_PASSWORD", "Nurse12345"), "nurse"),
+]
 
 DIAGNOSIS_SEED = [
     # Rheumatology (clinic specialty)
@@ -268,6 +280,12 @@ def seed_if_empty():
 
     _upsert(RadiologyLibrary, "exam_name", RADIOLOGY_SEED, lambda row: dict(
         code=row[0], exam_name=row[1], description=row[2], category=row[3]))
+
+    if User.query.first() is None:
+        for username, password, role in DEFAULT_USERS:
+            user = User(username=username, role=role)
+            user.set_password(password)
+            db.session.add(user)
 
     if ClinicSettings.query.first() is None:
         # --- NEW FEATURE: branding extracted from the uploaded prescription template ---

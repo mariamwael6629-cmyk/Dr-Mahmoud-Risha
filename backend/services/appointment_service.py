@@ -25,13 +25,54 @@ VISIT_TYPE_DURATIONS = {
 }
 DEFAULT_VISIT_DURATION = 15
 
+class AppointmentConflictError(Exception):
+    """Raised when a booking would overlap an existing (non-cancelled)
+    appointment at the same date/time — double-booking prevention."""
+    def __init__(self, existing=None):
+        self.existing = existing
+        super().__init__("That time slot is already booked.")
+
+
+class StaleVersionError(Exception):
+    """Optimistic-locking conflict on appointment update."""
+    def __init__(self, current_version):
+        self.current_version = current_version
+        super().__init__("This appointment was changed by someone else")
+
+
 def visit_duration_minutes(visit_type):
     return VISIT_TYPE_DURATIONS.get(visit_type, DEFAULT_VISIT_DURATION)
+
+
+def has_conflict(date_str, time_str, visit_type, exclude_id=None):
+    """True if [start, start+duration) overlaps an existing non-cancelled
+    appointment on the same day."""
+    if not date_str or not time_str:
+        return False
+    try:
+        day = date.fromisoformat(date_str)
+        start = datetime.combine(day, datetime.strptime(time_str, "%H:%M").time())
+    except (ValueError, TypeError):
+        return False
+    end = start + timedelta(minutes=visit_duration_minutes(visit_type))
+    for a in list_appointments(date=date_str):
+        if a.id == exclude_id or a.status == "cancelled" or not a.time:
+            continue
+        try:
+            a_start = datetime.combine(day, datetime.strptime(a.time, "%H:%M").time())
+        except ValueError:
+            continue
+        a_end = a_start + timedelta(minutes=visit_duration_minutes(a.visit_type))
+        if start < a_end and end > a_start:
+            return True
+    return False
 
 def is_valid_booking_day(day):
     return day.weekday() in VALID_BOOKING_WEEKDAYS
 
 def add_appointment(patient, data):
+    if has_conflict(data.get("date"), data.get("time"), data.get("visitType")):
+        raise AppointmentConflictError()
     appt = Appointment(
         patient_id=patient.id,
         date=data.get("date"),
@@ -54,6 +95,16 @@ def get_appointment(appointment_id):
     return Appointment.query.get(appointment_id)
 
 def update_appointment(appointment, data):
+    expected = data.get("version")
+    if expected is not None and int(expected) != (appointment.version or 1):
+        raise StaleVersionError(appointment.version or 1)
+    # Re-check for double-booking when the date/time is being changed.
+    if ("date" in data or "time" in data) and data.get("status") != "cancelled":
+        new_date = data.get("date", appointment.date)
+        new_time = data.get("time", appointment.time)
+        new_vt = data.get("visitType", appointment.visit_type)
+        if has_conflict(new_date, new_time, new_vt, exclude_id=appointment.id):
+            raise AppointmentConflictError()
     field_map = [
         ("date", "date"), ("time", "time"), ("diagnosis", "diagnosis"), ("drugs", "drugs"),
         ("requiredTests", "required_tests"), ("testsResult", "tests_result"),
@@ -63,6 +114,7 @@ def update_appointment(appointment, data):
     for json_key, attr in field_map:
         if json_key in data:
             setattr(appointment, attr, data[json_key])
+    appointment.version = (appointment.version or 1) + 1
     db.session.commit()
     return appointment
 
@@ -193,21 +245,35 @@ def book_walkin(data):
     date_str = None if nearest else (data.get("date") or None)
     time_str = None if nearest else (data.get("time") or None)
 
-    booking_date, booking_time = resolve_slot(date_str, time_str, visit_type)
-    if not booking_date or not booking_time:
-        raise ValueError("No available slot could be found.")
-
+    explicit_time = bool(time_str)  # the caller picked a specific slot
+    # Create/find the patient once and persist, so slot retries below never
+    # duplicate the patient record.
     patient = _find_or_create_patient(name, mobile_number)
-    appt = Appointment(
-        patient_id=patient.id,
-        date=booking_date,
-        time=booking_time,
-        visit_type=visit_type,
-        status="waiting",
-    )
-    db.session.add(appt)
     db.session.commit()
-    return patient, appt
+
+    # For auto-picked ("nearest") slots, if a concurrent booking just took the
+    # slot we resolved, transparently move to the next free one. For an
+    # explicitly requested time, a clash is reported so the caller can choose.
+    for _ in range(8):
+        booking_date, booking_time = resolve_slot(date_str, time_str, visit_type)
+        if not booking_date or not booking_time:
+            raise ValueError("No available slot could be found.")
+        if has_conflict(booking_date, booking_time, visit_type):
+            if explicit_time:
+                raise AppointmentConflictError()
+            db.session.expire_all()
+            continue
+        appt = Appointment(
+            patient_id=patient.id,
+            date=booking_date,
+            time=booking_time,
+            visit_type=visit_type,
+            status="waiting",
+        )
+        db.session.add(appt)
+        db.session.commit()
+        return patient, appt
+    raise AppointmentConflictError()
 
 def _rows_from_file(file_storage):
     raw = file_storage.read()

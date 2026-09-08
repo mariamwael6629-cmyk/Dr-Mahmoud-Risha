@@ -8,8 +8,10 @@ from models.prescription import Prescription
 from models.settings import ClinicSettings
 from models.availability import DoctorAvailability
 from models.financial import Invoice
+from models.user import User
 
 __all__ = [
+    "User",
     "Patient",
     "Appointment",
     "UploadedFile",

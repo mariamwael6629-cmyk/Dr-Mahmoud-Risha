@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 backend/database/clinic.db
+backend/database/secret_key
 backend/uploads/*
 !backend/uploads/.gitkeep
 backend/venv/
+tests/.pytest_cache/
+.pytest_cache/

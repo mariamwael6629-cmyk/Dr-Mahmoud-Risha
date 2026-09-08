@@ -22,6 +22,8 @@ class Patient(db.Model):
     notes = db.Column(db.Text)
     medical_history_extra = db.Column(db.Text)
 
+    version = db.Column(db.Integer, nullable=False, default=1)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     appointments = db.relationship(
@@ -46,6 +48,7 @@ class Patient(db.Model):
             "emergencyContact": self.emergency_contact,
             "notes": self.notes,
             "medicalHistoryExtra": json.loads(self.medical_history_extra) if self.medical_history_extra else {},
+            "version": self.version or 1,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
         if include_appointments:

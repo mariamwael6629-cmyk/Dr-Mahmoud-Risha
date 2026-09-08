@@ -1,6 +1,7 @@
 import json
 import re
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from database import db
@@ -8,6 +9,11 @@ from models.appointment import Appointment
 from models.patient import Patient
 
 _PATIENT_NUMBER_RE = re.compile(r"^P-(\d+)$")
+
+# Number of times to retry auto-generated patient-number allocation when two
+# concurrent requests race and pick the same P-XXXX value (SQLite UNIQUE
+# violation). Explicit, caller-supplied numbers are never retried.
+_PATIENT_NUMBER_RETRIES = 5
 
 class DuplicatePatientError(Exception):
     def __init__(self, existing_patient):
@@ -68,27 +74,41 @@ def create_patient(data, allow_duplicate=False):
         if dup:
             raise DuplicatePatientError(dup)
 
-    patient = Patient(
-        patient_number=data.get("patientNumber") or next_patient_number(),
-        name=data["Name"],
-        age=data["age"],
-        gender=data["gender"],
-        previous_operations=data.get("previousOperations"),
-        previous_treatment=data.get("previousTreatment"),
-        diagnosis=data.get("diagnosis"),
-        symptoms=data.get("symptoms"),
-        family_history=data.get("familyHistory"),
-        mobile_number=mobile_number,
-        emergency_contact=data.get("emergencyContact"),
-        notes=data.get("notes"),
-        medical_history_extra=json.dumps(data["medicalHistoryExtra"]) if data.get("medicalHistoryExtra") else None,
-    )
-    for appt in data.get("appointments", []):
-        patient.appointments.append(_build_appointment(appt))
+    explicit_number = data.get("patientNumber")
+    last_error = None
+    for attempt in range(_PATIENT_NUMBER_RETRIES):
+        patient = Patient(
+            patient_number=explicit_number or next_patient_number(),
+            name=data["Name"],
+            age=data["age"],
+            gender=data["gender"],
+            previous_operations=data.get("previousOperations"),
+            previous_treatment=data.get("previousTreatment"),
+            diagnosis=data.get("diagnosis"),
+            symptoms=data.get("symptoms"),
+            family_history=data.get("familyHistory"),
+            mobile_number=mobile_number,
+            emergency_contact=data.get("emergencyContact"),
+            notes=data.get("notes"),
+            medical_history_extra=json.dumps(data["medicalHistoryExtra"]) if data.get("medicalHistoryExtra") else None,
+        )
+        for appt in data.get("appointments", []):
+            patient.appointments.append(_build_appointment(appt))
 
-    db.session.add(patient)
-    db.session.commit()
-    return patient
+        db.session.add(patient)
+        try:
+            db.session.commit()
+            return patient
+        except IntegrityError as exc:
+            # A concurrent request grabbed the same auto-generated number.
+            # Roll back and try again with a freshly computed one. If the
+            # caller pinned an explicit number, the collision is a real
+            # conflict, so surface it instead of looping.
+            db.session.rollback()
+            last_error = exc
+            if explicit_number:
+                raise
+    raise last_error
 
 def update_patient(patient, data):
     field_map = [

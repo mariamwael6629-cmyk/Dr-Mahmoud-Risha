@@ -3,6 +3,7 @@ import io
 import json
 from datetime import datetime, date, timedelta
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from database import db
@@ -164,14 +165,23 @@ def _find_or_create_patient(name, mobile_number):
         existing = patient_service.find_duplicate_by_mobile(mobile_number)
         if existing:
             return existing
-    patient = Patient(
-        patient_number=patient_service.next_patient_number(),
-        name=name,
-        mobile_number=mobile_number or None,
-    )
-    db.session.add(patient)
-    db.session.flush()
-    return patient
+    last_error = None
+    for _ in range(patient_service._PATIENT_NUMBER_RETRIES):
+        patient = Patient(
+            patient_number=patient_service.next_patient_number(),
+            name=name,
+            mobile_number=mobile_number or None,
+        )
+        db.session.add(patient)
+        try:
+            db.session.flush()
+            return patient
+        except IntegrityError as exc:
+            # Two concurrent walk-ins raced for the same P-XXXX number.
+            # Roll back and retry with a freshly computed one.
+            db.session.rollback()
+            last_error = exc
+    raise last_error
 
 def book_walkin(data):
     name = (data.get("name") or "").strip()

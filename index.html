@@ -519,6 +519,7 @@ en:{
   todaysQueue:"Today's Queue", nextTurn:'NEXT', inConsultationNow:'IN CONSULTATION',
   statusArrived:'Arrived', markArrived:'Check In', markDone:'Done', patientOrder:'#',
   dateOfBooking:'Date of Booking', yearsLabel:'yrs', outPatientTitle:'Out-Patient List',
+  nextPatientBtn:'Next Patient', completedFilterBtn:'Completed', addPatientBooking:'+ Add Patient / Booking',
   bookAnyone:'Book Appointment', patientNameField:'Patient Name', patientPhoneField:'Phone Number',
   chooseDay:'Day', chooseTime:'Time', nearestSlot:'Nearest available slot', pickSpecificTime:'Pick a specific time',
   importAppointments:'Import Appointments from File', importScheduleBtn:'Import & Auto-Schedule',
@@ -669,6 +670,7 @@ ar:{
   todaysQueue:'قائمة انتظار اليوم', nextTurn:'التالي', inConsultationNow:'في الكشف',
   statusArrived:'حضر', markArrived:'تسجيل حضور', markDone:'إنهاء', patientOrder:'#',
   dateOfBooking:'تاريخ الحجز', yearsLabel:'سنة', outPatientTitle:'قائمة المرضى',
+  nextPatientBtn:'المريض التالي', completedFilterBtn:'المكتملة', addPatientBooking:'+ إضافة مريض / حجز',
   bookAnyone:'حجز موعد', patientNameField:'اسم المريض', patientPhoneField:'رقم الهاتف',
   chooseDay:'اليوم', chooseTime:'الوقت', nearestSlot:'أقرب موعد متاح', pickSpecificTime:'اختيار وقت محدد',
   importAppointments:'استيراد المواعيد من ملف', importScheduleBtn:'استيراد وجدولة تلقائية',
@@ -760,7 +762,7 @@ const state = {
   
   bookingVisitType:'consultation', bookingDay:'', bookingList:[], bookingLoaded:false,
   bookingValidDays:[], bookingSlots:[], bookingSearch:'',
-  homeQueue:[], homeQueueLoaded:false,
+  homeQueue:[], homeQueueLoaded:false, homeShowCompleted:false,
   reportsData:null,
   settingsLoaded:false,
   activeTheme:'ocean',
@@ -1191,10 +1193,11 @@ function renderHome(){
   const completed=active.filter(a=>a.status==='completed');
   const current=active.find(a=>a.status==='in_consultation');
   const nextId=current?null:(waiting[0]?waiting[0].id:null);
+  const shown=state.homeShowCompleted?completed:active;
 
-  const rowsHTML=active.length===0
+  const rowsHTML=shown.length===0
     ?`<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:2.2rem">${t('noBookingsToday')}</td></tr>`
-    :active.map((a,i)=>{
+    :shown.map((a,i)=>{
       const isCurrent=a.status==='in_consultation';
       const isNext=a.id===nextId;
       const pIdx=patientIdxById(a.patientId);
@@ -1234,6 +1237,11 @@ function renderHome(){
         <div class="page-heading" style="margin-bottom:0.15rem">${t('outPatientTitle')}</div>
         <p class="page-sub" style="margin:0">${t('homeSub')} · ${esc(sessionDate)}</p>
       </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-primary" ${nextId?'':'disabled'} style="${nextId?'':'opacity:.55;cursor:not-allowed'}" onclick="${nextId?`setHomeStatus(${nextId},'in_consultation')`:''}">${t('nextPatientBtn')}</button>
+        <button class="btn ${state.homeShowCompleted?'btn-primary':'btn-ghost'}" onclick="toggleHomeCompleted()">${t('completedFilterBtn')} (${completed.length})</button>
+        ${!isDoctor()?`<button class="btn btn-primary" onclick="navigate('booking')">${t('addPatientBooking')}</button>`:''}
+      </div>
     </div>
     <div class="stats-row">
       <div class="stat-card glass-card"><div class="stat-num">${active.length}</div><div class="stat-label">${t('bookedToday')}</div></div>
@@ -1253,6 +1261,8 @@ function renderHome(){
     </div>
   </div>`;
 }
+
+function toggleHomeCompleted(){ state.homeShowCompleted=!state.homeShowCompleted; renderHome(); }
 
 function formatBookingWhen(dateISO,time){
   if(!dateISO) return '—';
